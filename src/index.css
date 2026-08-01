@@ -18,3 +18,19 @@ body {
 ::-webkit-scrollbar {
   display: none;
 }
+
+/*
+  Foundational only: the app's colors are fixed hex values in tailwind.config.js,
+  not CSS variables, so this does not yet re-theme every component — just the
+  page background/text as a starting point for a future full light-theme pass.
+*/
+:root[data-theme='light'] body {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+@media print {
+  body {
+    background: #ffffff;
+  }
+}

@@ -1,18 +1,22 @@
 import { NavLink } from 'react-router-dom'
 import { Home, Receipt, Target, Star, Settings } from 'lucide-react'
+import { useTranslation } from '../../lib/i18n'
+import type { TranslationKey } from '../../lib/i18n'
 
-const TABS = [
-  { to: '/dashboard', label: 'Home', icon: Home },
-  { to: '/transactions', label: 'Transactions', icon: Receipt },
-  { to: '/budget', label: 'Budget', icon: Target },
-  { to: '/goals', label: 'Goals', icon: Star },
-  { to: '/settings', label: 'Settings', icon: Settings },
+const TABS: { to: string; labelKey: TranslationKey; icon: typeof Home }[] = [
+  { to: '/dashboard', labelKey: 'home', icon: Home },
+  { to: '/transactions', labelKey: 'transactions', icon: Receipt },
+  { to: '/budget', labelKey: 'budget', icon: Target },
+  { to: '/goals', labelKey: 'goals', icon: Star },
+  { to: '/settings', labelKey: 'settings', icon: Settings },
 ]
 
 export function BottomNav() {
+  const t = useTranslation()
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 h-16 bg-card border-t border-border flex items-center justify-around pb-[env(safe-area-inset-bottom)]">
-      {TABS.map(({ to, label, icon: Icon }) => (
+    <nav className="fixed bottom-0 left-1/2 h-16 w-full max-w-[430px] -translate-x-1/2 bg-card border-t border-border flex items-center justify-around pb-[env(safe-area-inset-bottom)] print:hidden">
+      {TABS.map(({ to, labelKey, icon: Icon }) => (
         <NavLink
           key={to}
           to={to}
@@ -29,7 +33,7 @@ export function BottomNav() {
                   isActive ? 'text-accent font-medium' : 'text-textsecondary'
                 }`}
               >
-                {label}
+                {t(labelKey)}
               </span>
             </>
           )}

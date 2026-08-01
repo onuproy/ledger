@@ -76,3 +76,129 @@ export interface DateFilter {
   endDate: string
   label: string
 }
+
+export type DashboardPeriod = '7d' | 'month' | 'year' | 'custom'
+
+export interface DateRange {
+  start: string
+  end: string
+}
+
+export interface TransactionWithCategory extends Transaction {
+  category: Category | null
+  account?: Account | null
+}
+
+export interface TransactionInput {
+  account_id: string
+  category_id: string
+  type: TransactionType
+  amount: number
+  note: string
+  date: string
+  receipt_url: string | null
+}
+
+export type TransactionTypeFilter = 'all' | TransactionType
+
+export interface TransactionFilters {
+  period: DashboardPeriod
+  customRange?: DateRange
+  type: TransactionTypeFilter
+}
+
+export interface DailyTotal {
+  day: string
+  total: number
+}
+
+export interface BudgetOverviewItem {
+  category: Category
+  spent: number
+  amount: number
+}
+
+export interface CategoryInput {
+  name: string
+  icon: string
+  color: string
+  type: TransactionType
+}
+
+export type AccountType = 'cash' | 'bank' | 'card' | 'wallet'
+
+export interface AccountInput {
+  name: string
+  type: AccountType
+  balance: number
+  color: string
+  icon: string
+  is_default: boolean
+}
+
+export interface ColorSwatch {
+  name: string
+  hex: string
+}
+
+export interface BudgetInput {
+  category_id: string
+  amount: number
+  period: BudgetPeriod
+}
+
+export interface BudgetCategoryItem {
+  category: Category
+  budget: Budget | null
+  spent: number
+}
+
+export interface GoalInput {
+  name: string
+  icon: string
+  color: string
+  target_amount: number
+  current_amount: number
+  deadline: string
+}
+
+export type AnalyticsPeriod = 'week' | 'month' | '3months' | 'year'
+
+export interface IncomeExpensePoint {
+  label: string
+  income: number
+  expense: number
+}
+
+export interface CategorySlice {
+  name: string
+  color: string
+  amount: number
+  percentage: number
+}
+
+export interface TrendPoint {
+  label: string
+  total: number
+}
+
+export interface TopCategoryItem {
+  category: Category
+  amount: number
+}
+
+export interface ProfileInput {
+  name: string
+  avatar_color: string
+  currency: string
+  language: string
+}
+
+export type ExportPeriod = 'thisMonth' | 'lastMonth' | 'last3Months' | 'allTime' | 'custom'
+
+export interface ExportFilters {
+  period: ExportPeriod
+  customRange?: DateRange
+  type: TransactionTypeFilter
+  accountId: string | null
+}

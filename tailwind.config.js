@@ -19,6 +19,26 @@ export default {
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
       },
+      keyframes: {
+        'fade-in': {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        'toast-in': {
+          '0%': { transform: 'translateY(100%)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        'confetti-fall': {
+          '0%': { transform: 'translateY(0) rotate(0deg)', opacity: '1' },
+          '100%': { transform: 'translateY(110vh) rotate(360deg)', opacity: '0.2' },
+        },
+      },
+      animation: {
+        'fade-in': 'fade-in 0.7s ease-out forwards',
+        'toast-in': 'toast-in 0.25s ease-out forwards',
+        'slide-up': 'toast-in 0.25s ease-out forwards',
+        'confetti-fall': 'confetti-fall 1.6s linear forwards',
+      },
     },
   },
   plugins: [],

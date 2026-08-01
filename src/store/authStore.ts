@@ -1,15 +1,14 @@
 import { create } from 'zustand'
-import type { Session, User as SupabaseUser } from '@supabase/supabase-js'
+import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import type { User } from '../types'
 
 interface AuthState {
   user: User | null
-  session: Session | null
   isLoading: boolean
-  setUser: (user: User | null, session: Session | null) => void
+  setUser: (user: User | null) => void
   logout: () => Promise<void>
-  init: () => Promise<void>
+  initialize: () => Promise<void>
 }
 
 function toUser(supabaseUser: SupabaseUser | undefined): User | null {
@@ -26,26 +25,21 @@ function toUser(supabaseUser: SupabaseUser | undefined): User | null {
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  session: null,
   isLoading: true,
 
-  setUser: (user, session) => set({ user, session }),
+  setUser: (user) => set({ user }),
 
   logout: async () => {
     await supabase.auth.signOut()
-    set({ user: null, session: null })
+    set({ user: null })
   },
 
-  init: async () => {
+  initialize: async () => {
     const { data } = await supabase.auth.getSession()
-    set({
-      session: data.session,
-      user: toUser(data.session?.user),
-      isLoading: false,
-    })
+    set({ user: toUser(data.session?.user), isLoading: false })
 
     supabase.auth.onAuthStateChange((_event, session) => {
-      set({ session, user: toUser(session?.user) })
+      set({ user: toUser(session?.user) })
     })
   },
 }))
