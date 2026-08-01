@@ -4,6 +4,7 @@ import { useGoalStore } from '../../store/goalStore'
 import { Toast } from '../ui/Toast'
 import { GOAL_GRADIENT_COLORS } from '../../constants/colors'
 import { GOAL_ICON_OPTIONS } from '../../constants/icons'
+import { toDateOnly } from '../../lib/helpers'
 
 interface GoalSheetProps {
   onClose: () => void
@@ -128,7 +129,8 @@ export function GoalSheet({ onClose, onSaved }: GoalSheetProps) {
           type="date"
           value={deadline}
           onChange={(e) => setDeadline(e.target.value)}
-          className="mb-5 min-h-[48px] w-full rounded-lg border border-border bg-surface px-4 py-3 text-textprimary"
+          min={toDateOnly(new Date())}
+          className="mb-5 min-h-[48px] w-full rounded-lg border border-border bg-surface px-4 py-3 text-textprimary [color-scheme:dark]"
         />
 
         <button

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Plus, TrendingDown, TrendingUp, ArrowLeftRight } from 'lucide-react'
 import { BalanceCard } from '../../components/charts/BalanceCard'
 import { SpendChart } from '../../components/charts/SpendChart'
@@ -20,6 +20,7 @@ const PERIOD_TABS: { value: DashboardPeriod; label: string }[] = [
 ]
 
 export function Dashboard() {
+  const navigate = useNavigate()
   const [selectedPeriod, setSelectedPeriod] = useState<DashboardPeriod>('month')
   const [customRange, setCustomRange] = useState<DateRange | null>(null)
   const [showCustomModal, setShowCustomModal] = useState(false)
@@ -51,8 +52,12 @@ export function Dashboard() {
     setShowCustomModal(false)
   }
 
-  function handleQuickAction(label: string) {
-    setToast({ message: `${label} — coming soon`, type: 'success' })
+  function handleAddTransaction(type?: 'income' | 'expense') {
+    navigate('/transactions', { state: { openAdd: true, type } })
+  }
+
+  function handleTransfer() {
+    setToast({ message: 'Transfer — coming soon', type: 'success' })
   }
 
   const recentTransactions = transactions.slice(0, 5)
@@ -81,17 +86,17 @@ export function Dashboard() {
         <QuickAction
           label="Expense"
           icon={<TrendingDown size={20} className="text-expense" />}
-          onClick={() => handleQuickAction('Add Expense')}
+          onClick={() => handleAddTransaction('expense')}
         />
         <QuickAction
           label="Income"
           icon={<TrendingUp size={20} className="text-income" />}
-          onClick={() => handleQuickAction('Add Income')}
+          onClick={() => handleAddTransaction('income')}
         />
         <QuickAction
           label="Transfer"
           icon={<ArrowLeftRight size={20} className="text-blue-500" />}
-          onClick={() => handleQuickAction('Transfer')}
+          onClick={handleTransfer}
         />
       </div>
 
@@ -109,7 +114,7 @@ export function Dashboard() {
           <div className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card px-4 py-8 text-center">
             <p className="text-sm text-textsecondary">No transactions yet</p>
             <button
-              onClick={() => handleQuickAction('Add Transaction')}
+              onClick={() => handleAddTransaction()}
               className="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-white hover:bg-accent-hover"
               aria-label="Add transaction"
             >

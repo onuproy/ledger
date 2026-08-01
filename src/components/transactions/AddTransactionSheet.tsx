@@ -4,7 +4,7 @@ import { useTransactionStore } from '../../store/transactionStore'
 import { useCategoryStore } from '../../store/categoryStore'
 import { useAccountStore } from '../../store/accountStore'
 import { Toast } from '../ui/Toast'
-import { formatCurrency, formatDate } from '../../lib/formatters'
+import { formatCurrency } from '../../lib/formatters'
 import { toDateOnly } from '../../lib/helpers'
 import type { TransactionType, TransactionWithCategory } from '../../types'
 
@@ -35,7 +35,6 @@ export function AddTransactionSheet({
   const [date, setDate] = useState(transaction ? transaction.date.slice(0, 10) : today)
   const [note, setNote] = useState(transaction?.note ?? '')
   const [receiptFile, setReceiptFile] = useState<File | null>(null)
-  const [showDateInput, setShowDateInput] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -250,28 +249,15 @@ export function AddTransactionSheet({
           </div>
         </div>
 
-        <div className="mt-5 flex items-center justify-between">
-          <h3 className="text-sm font-medium text-textsecondary">Date</h3>
-          {showDateInput ? (
-            <input
-              type="date"
-              autoFocus
-              value={date}
-              onChange={(e) => {
-                setDate(e.target.value)
-                setShowDateInput(false)
-              }}
-              onBlur={() => setShowDateInput(false)}
-              className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-textprimary"
-            />
-          ) : (
-            <button
-              onClick={() => setShowDateInput(true)}
-              className="min-h-[40px] rounded-lg border border-border px-3 py-2 text-sm text-textprimary"
-            >
-              {date === today ? 'Today' : formatDate(date)}
-            </button>
-          )}
+        <div className="mt-5">
+          <h3 className="mb-2 text-sm font-medium text-textsecondary">Date</h3>
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            max={today}
+            className="w-full rounded-xl border border-border bg-surface p-3 text-sm text-textprimary [color-scheme:dark]"
+          />
         </div>
 
         <input

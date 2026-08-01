@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toDateOnly } from '../../lib/helpers'
 import type { DateRange } from '../../types'
 
 interface CustomRangeModalProps {
@@ -10,6 +11,7 @@ interface CustomRangeModalProps {
 export function CustomRangeModal({ initial, onApply, onClose }: CustomRangeModalProps) {
   const [start, setStart] = useState(initial?.start ?? '')
   const [end, setEnd] = useState(initial?.end ?? '')
+  const today = toDateOnly(new Date())
 
   return (
     <div
@@ -29,7 +31,8 @@ export function CustomRangeModal({ initial, onApply, onClose }: CustomRangeModal
               type="date"
               value={start}
               onChange={(e) => setStart(e.target.value)}
-              className="mt-1 min-h-[48px] w-full rounded-lg border border-border bg-surface px-4 py-3 text-textprimary"
+              max={today}
+              className="mt-1 min-h-[48px] w-full rounded-lg border border-border bg-surface px-4 py-3 text-textprimary [color-scheme:dark]"
             />
           </label>
           <label className="text-sm text-textsecondary">
@@ -38,7 +41,8 @@ export function CustomRangeModal({ initial, onApply, onClose }: CustomRangeModal
               type="date"
               value={end}
               onChange={(e) => setEnd(e.target.value)}
-              className="mt-1 min-h-[48px] w-full rounded-lg border border-border bg-surface px-4 py-3 text-textprimary"
+              max={today}
+              className="mt-1 min-h-[48px] w-full rounded-lg border border-border bg-surface px-4 py-3 text-textprimary [color-scheme:dark]"
             />
           </label>
         </div>

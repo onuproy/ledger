@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -18,6 +19,7 @@ import { formatCurrency, formatGroupDate } from '../../lib/formatters'
 import type {
   DashboardPeriod,
   DateRange,
+  TransactionType,
   TransactionTypeFilter,
   TransactionWithCategory,
 } from '../../types'
@@ -68,6 +70,9 @@ function groupTransactionsByDate(transactions: TransactionWithCategory[]): Trans
 }
 
 export function Transactions() {
+  const location = useLocation()
+  const navigate = useNavigate()
+
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [showFilters, setShowFilters] = useState(false)
@@ -81,6 +86,7 @@ export function Transactions() {
     null
   )
   const [showAddSheet, setShowAddSheet] = useState(false)
+  const [pendingType, setPendingType] = useState<TransactionType | undefined>(undefined)
   const [editingTransaction, setEditingTransaction] = useState<TransactionWithCategory | null>(
     null
   )
@@ -99,6 +105,18 @@ export function Transactions() {
   const fetchTransactions = useTransactionStore((s) => s.fetchTransactions)
   const loadMoreTransactions = useTransactionStore((s) => s.loadMoreTransactions)
   const deleteTransaction = useTransactionStore((s) => s.deleteTransaction)
+
+  useEffect(() => {
+    const state = location.state as { openAdd?: boolean; type?: string } | null
+    if (!state?.openAdd) return
+
+    setEditingTransaction(null)
+    setPendingType(state.type === 'income' || state.type === 'expense' ? state.type : undefined)
+    setShowAddSheet(true)
+
+    // Clear the one-shot navigation state so this doesn't reopen on remount/back-nav.
+    navigate(location.pathname, { replace: true, state: null })
+  }, [location, navigate])
 
   useEffect(() => {
     if (selectedPeriod === 'custom' && !customRange) return
@@ -324,6 +342,7 @@ export function Transactions() {
         <button
           onClick={() => {
             setEditingTransaction(null)
+            setPendingType(undefined)
             setShowAddSheet(true)
           }}
           className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full bg-accent text-white shadow-lg hover:bg-accent-hover"
@@ -344,9 +363,11 @@ export function Transactions() {
       {(showAddSheet || editingTransaction) && (
         <AddTransactionSheet
           transaction={editingTransaction}
+          defaultType={editingTransaction ? undefined : pendingType}
           onClose={() => {
             setShowAddSheet(false)
             setEditingTransaction(null)
+            setPendingType(undefined)
           }}
           onSaved={() => {
             refreshAfterMutation()
