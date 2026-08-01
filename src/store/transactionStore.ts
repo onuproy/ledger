@@ -13,6 +13,7 @@ import type {
   TransactionFilters,
   TransactionInput,
   TransactionWithCategory,
+  TransferInput,
 } from '../types'
 
 const PAGE_SIZE = 20
@@ -44,6 +45,7 @@ interface TransactionState {
     input: Partial<TransactionInput>
   ) => Promise<{ error: string | null }>
   deleteTransaction: (id: string) => Promise<{ error: string | null }>
+  createTransfer: (input: TransferInput) => Promise<{ error: string | null }>
 
   // Export / Import / Bulk
   fetchExportTransactions: (filters: ExportFilters) => Promise<TransactionWithCategory[]>
@@ -106,6 +108,39 @@ async function adjustAccountBalance(accountId: string, delta: number): Promise<v
 
 function balanceDelta(type: Transaction['type'], amount: number): number {
   return type === 'income' ? amount : -amount
+}
+
+async function findOrCreateCategory(
+  userId: string,
+  name: string,
+  type: Transaction['type']
+): Promise<string | null> {
+  const { data: existing } = await supabase
+    .from('categories')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('type', type)
+    .eq('name', name)
+    .maybeSingle()
+
+  if (existing) return existing.id
+
+  const { data: created, error } = await supabase
+    .from('categories')
+    .insert({
+      user_id: userId,
+      name,
+      icon: '🔁',
+      color: '#6366f1',
+      type,
+      is_default: false,
+      sort_order: 999,
+    })
+    .select('id')
+    .single()
+
+  if (error || !created) return null
+  return created.id
 }
 
 export const useTransactionStore = create<TransactionState>((set, get) => ({
@@ -292,6 +327,48 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
       transactions: state.transactions.filter((t) => t.id !== id),
       list: state.list.filter((t) => t.id !== id),
     }))
+
+    return { error: null }
+  },
+
+  createTransfer: async ({ fromAccountId, toAccountId, amount, date }) => {
+    const userId = useAuthStore.getState().user?.id
+    if (!userId) return { error: 'Not signed in' }
+
+    if (fromAccountId === toAccountId) {
+      return { error: 'Choose two different accounts' }
+    }
+
+    const [expenseCategoryId, incomeCategoryId] = await Promise.all([
+      findOrCreateCategory(userId, 'Transfer', 'expense'),
+      findOrCreateCategory(userId, 'Transfer', 'income'),
+    ])
+
+    if (!expenseCategoryId || !incomeCategoryId) {
+      return { error: 'Could not set up the Transfer category' }
+    }
+
+    const outResult = await get().addTransaction({
+      account_id: fromAccountId,
+      category_id: expenseCategoryId,
+      type: 'expense',
+      amount,
+      note: 'Transfer',
+      date,
+      receipt_url: null,
+    })
+    if (outResult.error) return { error: outResult.error }
+
+    const inResult = await get().addTransaction({
+      account_id: toAccountId,
+      category_id: incomeCategoryId,
+      type: 'income',
+      amount,
+      note: 'Transfer',
+      date,
+      receipt_url: null,
+    })
+    if (inResult.error) return { error: inResult.error }
 
     return { error: null }
   },

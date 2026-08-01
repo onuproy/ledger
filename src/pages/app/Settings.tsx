@@ -1,12 +1,13 @@
 import { useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   BarChart3,
   ChevronRight,
   Download,
   Fingerprint,
   Landmark,
+  LogOut,
   Mail,
   Shield,
   ShieldOff,
@@ -17,6 +18,7 @@ import {
 } from 'lucide-react'
 import { EditProfileModal } from '../../components/settings/EditProfileModal'
 import { PinSetupModal } from '../../components/settings/PinSetupModal'
+import { PrivacyPolicyModal } from '../../components/settings/PrivacyPolicyModal'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { Toast, type ToastType } from '../../components/ui/Toast'
 import { useProfileStore } from '../../store/profileStore'
@@ -27,9 +29,7 @@ import { useTranslation } from '../../lib/i18n'
 import { isWebAuthnSupported, enrollBiometric } from '../../lib/webauthn'
 import { parseTransactionsCsv } from '../../lib/csv'
 
-// Fill these in with your real support contact / policy URL before shipping.
-const SUPPORT_EMAIL = ''
-const PRIVACY_POLICY_URL = ''
+const SUPPORT_EMAIL = 'anupme01@gmail.com'
 
 const MANAGE_ITEMS = [
   { to: '/settings/categories', label: 'Categories', icon: Tag },
@@ -112,6 +112,8 @@ function SettingsRow({
 
 export function Settings() {
   const t = useTranslation()
+  const navigate = useNavigate()
+  const logout = useAuthStore((s) => s.logout)
 
   const profileName = useProfileStore((s) => s.name)
   const profileEmail = useProfileStore((s) => s.email)
@@ -137,6 +139,7 @@ export function Settings() {
 
   const [showEditProfile, setShowEditProfile] = useState(false)
   const [showPinSetup, setShowPinSetup] = useState(false)
+  const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [isClearing, setIsClearing] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null)
@@ -223,19 +226,12 @@ export function Settings() {
   }
 
   function handleFeedback() {
-    if (!SUPPORT_EMAIL) {
-      setToast({ message: 'Feedback email not configured yet', type: 'error' })
-      return
-    }
-    window.location.href = `mailto:${SUPPORT_EMAIL}?subject=Ledger Feedback`
+    window.location.href = `mailto:${SUPPORT_EMAIL}?subject=Ledger App Feedback`
   }
 
-  function handlePrivacyPolicy() {
-    if (!PRIVACY_POLICY_URL) {
-      setToast({ message: 'Privacy policy link not configured yet', type: 'error' })
-      return
-    }
-    window.open(PRIVACY_POLICY_URL, '_blank', 'noopener,noreferrer')
+  async function handleLogout() {
+    await logout()
+    navigate('/login')
   }
 
   return (
@@ -423,8 +419,15 @@ export function Settings() {
       <SettingsSection title={t('support')}>
         {isPwaInstalled && <SettingsRow icon={Star} label="Rate the App" onClick={handleRateApp} />}
         <SettingsRow icon={Mail} label="Send Feedback" onClick={handleFeedback} />
-        <SettingsRow icon={Shield} label="Privacy Policy" onClick={handlePrivacyPolicy} />
+        <SettingsRow icon={Shield} label="Privacy Policy" onClick={() => setShowPrivacyPolicy(true)} />
       </SettingsSection>
+
+      <button
+        onClick={handleLogout}
+        className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-4 font-semibold text-red-400"
+      >
+        <LogOut size={18} /> Sign Out
+      </button>
 
       {showEditProfile && (
         <EditProfileModal
@@ -438,6 +441,10 @@ export function Settings() {
           onClose={() => setShowPinSetup(false)}
           onSaved={() => setToast({ message: 'PIN lock enabled', type: 'success' })}
         />
+      )}
+
+      {showPrivacyPolicy && (
+        <PrivacyPolicyModal onClose={() => setShowPrivacyPolicy(false)} />
       )}
 
       {showClearConfirm && (

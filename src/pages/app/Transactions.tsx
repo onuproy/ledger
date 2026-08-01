@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { TransactionItem } from '../../components/transactions/TransactionItem'
 import { AddTransactionSheet } from '../../components/transactions/AddTransactionSheet'
+import type { EntryType } from '../../components/transactions/AddTransactionSheet'
 import { TransactionDetailModal } from '../../components/transactions/TransactionDetailModal'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { CustomRangeModal } from '../../components/ui/CustomRangeModal'
@@ -19,7 +20,6 @@ import { formatCurrency, formatGroupDate } from '../../lib/formatters'
 import type {
   DashboardPeriod,
   DateRange,
-  TransactionType,
   TransactionTypeFilter,
   TransactionWithCategory,
 } from '../../types'
@@ -86,7 +86,7 @@ export function Transactions() {
     null
   )
   const [showAddSheet, setShowAddSheet] = useState(false)
-  const [pendingType, setPendingType] = useState<TransactionType | undefined>(undefined)
+  const [pendingType, setPendingType] = useState<EntryType | undefined>(undefined)
   const [editingTransaction, setEditingTransaction] = useState<TransactionWithCategory | null>(
     null
   )
@@ -111,7 +111,11 @@ export function Transactions() {
     if (!state?.openAdd) return
 
     setEditingTransaction(null)
-    setPendingType(state.type === 'income' || state.type === 'expense' ? state.type : undefined)
+    setPendingType(
+      state.type === 'income' || state.type === 'expense' || state.type === 'transfer'
+        ? state.type
+        : undefined
+    )
     setShowAddSheet(true)
 
     // Clear the one-shot navigation state so this doesn't reopen on remount/back-nav.

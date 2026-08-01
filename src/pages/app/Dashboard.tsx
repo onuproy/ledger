@@ -6,7 +6,6 @@ import { BalanceCard } from '../../components/charts/BalanceCard'
 import { SpendChart } from '../../components/charts/SpendChart'
 import { BudgetOverviewCard } from '../../components/charts/BudgetOverviewCard'
 import { TransactionItem } from '../../components/transactions/TransactionItem'
-import { Toast, type ToastType } from '../../components/ui/Toast'
 import { CustomRangeModal } from '../../components/ui/CustomRangeModal'
 import { useTransactionStore } from '../../store/transactionStore'
 import { useBudgetStore } from '../../store/budgetStore'
@@ -24,7 +23,6 @@ export function Dashboard() {
   const [selectedPeriod, setSelectedPeriod] = useState<DashboardPeriod>('month')
   const [customRange, setCustomRange] = useState<DateRange | null>(null)
   const [showCustomModal, setShowCustomModal] = useState(false)
-  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null)
 
   const { transactions, income, expense, dailyTotals, fetchDashboardData } = useTransactionStore()
   const { overview, fetchBudgetOverview } = useBudgetStore()
@@ -52,12 +50,8 @@ export function Dashboard() {
     setShowCustomModal(false)
   }
 
-  function handleAddTransaction(type?: 'income' | 'expense') {
+  function handleAddTransaction(type?: 'income' | 'expense' | 'transfer') {
     navigate('/transactions', { state: { openAdd: true, type } })
-  }
-
-  function handleTransfer() {
-    setToast({ message: 'Transfer — coming soon', type: 'success' })
   }
 
   const recentTransactions = transactions.slice(0, 5)
@@ -96,7 +90,7 @@ export function Dashboard() {
         <QuickAction
           label="Transfer"
           icon={<ArrowLeftRight size={20} className="text-blue-500" />}
-          onClick={handleTransfer}
+          onClick={() => handleAddTransaction('transfer')}
         />
       </div>
 
@@ -138,10 +132,6 @@ export function Dashboard() {
           onApply={handleApplyCustomRange}
           onClose={() => setShowCustomModal(false)}
         />
-      )}
-
-      {toast && (
-        <Toast message={toast.message} type={toast.type} onDismiss={() => setToast(null)} />
       )}
     </div>
   )

@@ -202,3 +202,10 @@ export interface ExportFilters {
   type: TransactionTypeFilter
   accountId: string | null
 }
+
+export interface TransferInput {
+  fromAccountId: string
+  toAccountId: string
+  amount: number
+  date: string
+}
