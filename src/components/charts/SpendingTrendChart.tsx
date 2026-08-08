@@ -49,7 +49,7 @@ export function SpendingTrendChart({ data }: SpendingTrendChartProps) {
               dataKey="label"
               tickLine={false}
               axisLine={false}
-              tick={{ fill: '#94a3b8', fontSize: 10 }}
+              tick={{ fill: 'rgb(var(--color-text-secondary))', fontSize: 10 }}
               interval="preserveStartEnd"
             />
             <Tooltip content={ChartTooltip} />

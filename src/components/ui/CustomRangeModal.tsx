@@ -32,7 +32,7 @@ export function CustomRangeModal({ initial, onApply, onClose }: CustomRangeModal
               value={start}
               onChange={(e) => setStart(e.target.value)}
               max={today}
-              className="mt-1 min-h-[48px] w-full rounded-lg border border-border bg-surface px-4 py-3 text-textprimary [color-scheme:dark]"
+              className="mt-1 min-h-[48px] w-full rounded-lg border border-border bg-surface px-4 py-3 text-textprimary"
             />
           </label>
           <label className="text-sm text-textsecondary">
@@ -42,7 +42,7 @@ export function CustomRangeModal({ initial, onApply, onClose }: CustomRangeModal
               value={end}
               onChange={(e) => setEnd(e.target.value)}
               max={today}
-              className="mt-1 min-h-[48px] w-full rounded-lg border border-border bg-surface px-4 py-3 text-textprimary [color-scheme:dark]"
+              className="mt-1 min-h-[48px] w-full rounded-lg border border-border bg-surface px-4 py-3 text-textprimary"
             />
           </label>
         </div>

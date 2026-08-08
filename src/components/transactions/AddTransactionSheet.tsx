@@ -37,6 +37,9 @@ export function AddTransactionSheet({
   const [fromAccountId, setFromAccountId] = useState<string | null>(null)
   const [toAccountId, setToAccountId] = useState<string | null>(null)
   const [date, setDate] = useState(transaction ? transaction.date.slice(0, 10) : today)
+  const [time, setTime] = useState(
+    transaction?.time ?? new Date().toTimeString().slice(0, 5)
+  )
   const [note, setNote] = useState(transaction?.note ?? '')
   const [receiptFile, setReceiptFile] = useState<File | null>(null)
   const [isSaving, setIsSaving] = useState(false)
@@ -113,7 +116,7 @@ export function AddTransactionSheet({
       }
 
       setIsSaving(true)
-      const result = await createTransfer({ fromAccountId, toAccountId, amount, date })
+      const result = await createTransfer({ fromAccountId, toAccountId, amount, date, time })
       setIsSaving(false)
 
       if (result.error) {
@@ -155,6 +158,7 @@ export function AddTransactionSheet({
           amount,
           note,
           date,
+          time,
           receipt_url: receiptUrl,
         })
       : await addTransaction({
@@ -164,6 +168,7 @@ export function AddTransactionSheet({
           amount,
           note,
           date,
+          time,
           receipt_url: receiptUrl,
         })
 
@@ -357,14 +362,22 @@ export function AddTransactionSheet({
         )}
 
         <div className="mt-5">
-          <h3 className="mb-2 text-sm font-medium text-textsecondary">Date</h3>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            max={today}
-            className="w-full rounded-xl border border-border bg-surface p-3 text-sm text-textprimary [color-scheme:dark]"
-          />
+          <h3 className="mb-2 text-sm font-medium text-textsecondary">Date &amp; Time</h3>
+          <div className="flex gap-2">
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              max={today}
+              className="flex-1 rounded-xl border border-border bg-surface p-3 text-sm text-textprimary"
+            />
+            <input
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              className="w-28 rounded-xl border border-border bg-surface p-3 text-sm text-textprimary"
+            />
+          </div>
         </div>
 
         {type !== 'transfer' && (

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react'
-import { formatCurrency, formatMonthYear } from '../../lib/formatters'
+import { formatCurrency, formatFullDate, formatMonthYear } from '../../lib/formatters'
 
 interface BalanceCardProps {
   balance: number
@@ -13,6 +13,7 @@ const ANIMATION_DURATION_MS = 1200
 export function BalanceCard({ balance, income, expense }: BalanceCardProps) {
   const [displayValue, setDisplayValue] = useState(0)
   const rafId = useRef<number | null>(null)
+  const isNegative = balance < 0
 
   useEffect(() => {
     const startTime = performance.now()
@@ -38,11 +39,17 @@ export function BalanceCard({ balance, income, expense }: BalanceCardProps) {
   return (
     <div className="relative rounded-2xl bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-600 p-6 text-white">
       <div className="flex items-start justify-between">
-        <span className="text-sm text-white/70">Total Balance</span>
+        <div>
+          <span className="text-sm text-white/70">Total Balance</span>
+          <p className="text-xs text-white/60">{formatFullDate()}</p>
+        </div>
         <span className="text-xs text-white/70">{formatMonthYear()}</span>
       </div>
 
-      <div className="mt-2 text-4xl font-bold">{formatCurrency(displayValue)}</div>
+      <div className={`mt-2 text-4xl font-bold ${isNegative ? 'text-red-400' : 'text-white'}`}>
+        {isNegative ? '-' : ''}
+        {formatCurrency(Math.abs(displayValue))}
+      </div>
 
       <div className="mt-5 flex items-center gap-6">
         <div className="flex items-center gap-1.5">

@@ -132,6 +132,7 @@ export const useGoalStore = create<GoalState>((set, get) => ({
           amount,
           note: note || `Added to ${goal.name}`,
           date: new Date().toISOString().slice(0, 10),
+          time: new Date().toTimeString().slice(0, 5),
           receipt_url: null,
         })
 

@@ -1,4 +1,4 @@
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from 'recharts'
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis } from 'recharts'
 import type { TooltipContentProps } from 'recharts'
 import { formatCurrency } from '../../lib/formatters'
 import type { DailyTotal } from '../../types'
@@ -25,11 +25,16 @@ export function SpendChart({ data }: SpendChartProps) {
       <div style={{ height: 140 }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} barCategoryGap="24%">
+            <CartesianGrid
+              vertical={false}
+              stroke="rgb(var(--color-border))"
+              strokeDasharray="3 3"
+            />
             <XAxis
               dataKey="day"
               tickLine={false}
               axisLine={false}
-              tick={{ fill: '#94a3b8', fontSize: 11 }}
+              tick={{ fill: 'rgb(var(--color-text-secondary))', fontSize: 11 }}
             />
             <Tooltip cursor={{ fill: 'rgba(99, 102, 241, 0.08)' }} content={ChartTooltip} />
             <Bar dataKey="total" fill="#6366f1" radius={[4, 4, 0, 0]} maxBarSize={22} />

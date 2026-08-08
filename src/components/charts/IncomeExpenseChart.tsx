@@ -32,7 +32,7 @@ export function IncomeExpenseChart({ data }: IncomeExpenseChartProps) {
               dataKey="label"
               tickLine={false}
               axisLine={false}
-              tick={{ fill: '#94a3b8', fontSize: 11 }}
+              tick={{ fill: 'rgb(var(--color-text-secondary))', fontSize: 11 }}
             />
             <Tooltip cursor={{ fill: 'rgba(99, 102, 241, 0.08)' }} content={ChartTooltip} />
             <Bar dataKey="income" fill="#6366f1" radius={[4, 4, 0, 0]} maxBarSize={16} />

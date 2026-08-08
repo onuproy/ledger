@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTransactionStore } from '../../store/transactionStore'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { Toast } from '../ui/Toast'
-import { formatCurrency, formatDate } from '../../lib/formatters'
+import { formatCurrency, formatDate, formatTime } from '../../lib/formatters'
 import type { TransactionWithCategory } from '../../types'
 
 interface TransactionDetailModalProps {
@@ -23,7 +23,7 @@ export function TransactionDetailModal({
   const [error, setError] = useState<string | null>(null)
   const deleteTransaction = useTransactionStore((s) => s.deleteTransaction)
 
-  const { category, account, type, amount, date, note, receipt_url } = transaction
+  const { category, account, type, amount, date, time, note, receipt_url } = transaction
   const isIncome = type === 'income'
 
   async function handleConfirmDelete() {
@@ -70,7 +70,7 @@ export function TransactionDetailModal({
           <DetailRow label="Type" value={isIncome ? 'Income' : 'Expense'} />
           <DetailRow label="Category" value={category?.name ?? 'Uncategorized'} />
           <DetailRow label="Account" value={account?.name ?? '—'} />
-          <DetailRow label="Date" value={formatDate(date)} />
+          <DetailRow label="Date" value={time ? `${formatDate(date)} · ${formatTime(time)}` : formatDate(date)} />
           <DetailRow label="Note" value={note || '—'} />
         </div>
 

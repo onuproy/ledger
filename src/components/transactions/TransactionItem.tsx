@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { Trash2 } from 'lucide-react'
-import { formatCurrency, formatDate } from '../../lib/formatters'
+import { formatCurrency, formatDate, formatTime } from '../../lib/formatters'
 import type { TransactionWithCategory } from '../../types'
 
 interface TransactionItemProps {
@@ -13,7 +13,7 @@ const REVEAL_WIDTH = 72
 const SWIPE_OPEN_THRESHOLD = REVEAL_WIDTH / 2
 
 export function TransactionItem({ transaction, onClick, onDelete }: TransactionItemProps) {
-  const { category, note, type, amount, date } = transaction
+  const { category, note, type, amount, date, time } = transaction
   const primaryLabel = note || category?.name || 'Uncategorized'
   const isIncome = type === 'income'
 
@@ -95,7 +95,10 @@ export function TransactionItem({ transaction, onClick, onDelete }: TransactionI
             {isIncome ? '+' : '-'}
             {formatCurrency(amount)}
           </p>
-          <p className="text-xs text-textsecondary/70">{formatDate(date)}</p>
+          <p className="text-xs text-textsecondary/70">
+            {formatDate(date)}
+            {time && ` · ${formatTime(time)}`}
+          </p>
         </div>
       </div>
     </div>

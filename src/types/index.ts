@@ -44,6 +44,7 @@ export interface Transaction {
   amount: number
   note: string
   date: string
+  time: string | null
   is_recurring: boolean
   recur_period: RecurPeriod | null
   receipt_url: string | null
@@ -96,6 +97,7 @@ export interface TransactionInput {
   amount: number
   note: string
   date: string
+  time: string | null
   receipt_url: string | null
 }
 
@@ -208,4 +210,5 @@ export interface TransferInput {
   toAccountId: string
   amount: number
   date: string
+  time: string | null
 }

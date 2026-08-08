@@ -331,7 +331,7 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
     return { error: null }
   },
 
-  createTransfer: async ({ fromAccountId, toAccountId, amount, date }) => {
+  createTransfer: async ({ fromAccountId, toAccountId, amount, date, time }) => {
     const userId = useAuthStore.getState().user?.id
     if (!userId) return { error: 'Not signed in' }
 
@@ -355,6 +355,7 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
       amount,
       note: 'Transfer',
       date,
+      time,
       receipt_url: null,
     })
     if (outResult.error) return { error: outResult.error }
@@ -366,6 +367,7 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
       amount,
       note: 'Transfer',
       date,
+      time,
       receipt_url: null,
     })
     if (inResult.error) return { error: inResult.error }
@@ -438,6 +440,7 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
         amount: row.amount,
         note: row.note,
         date: row.date,
+        time: null,
         receipt_url: null,
       })
 

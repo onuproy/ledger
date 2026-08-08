@@ -9,6 +9,7 @@ import { TransactionItem } from '../../components/transactions/TransactionItem'
 import { CustomRangeModal } from '../../components/ui/CustomRangeModal'
 import { useTransactionStore } from '../../store/transactionStore'
 import { useBudgetStore } from '../../store/budgetStore'
+import { useAuthStore } from '../../store/authStore'
 import type { DashboardPeriod, DateRange } from '../../types'
 
 const PERIOD_TABS: { value: DashboardPeriod; label: string }[] = [
@@ -23,18 +24,39 @@ export function Dashboard() {
   const [selectedPeriod, setSelectedPeriod] = useState<DashboardPeriod>('month')
   const [customRange, setCustomRange] = useState<DateRange | null>(null)
   const [showCustomModal, setShowCustomModal] = useState(false)
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false)
+
+  const isAuthLoading = useAuthStore((s) => s.isLoading)
+  const userId = useAuthStore((s) => s.user?.id)
 
   const { transactions, income, expense, dailyTotals, fetchDashboardData } = useTransactionStore()
   const { overview, fetchBudgetOverview } = useBudgetStore()
 
   useEffect(() => {
+    // Wait for auth to resolve first — on a hard reload landing directly on
+    // this route, authStore.initialize() hasn't finished yet, so fetching
+    // immediately would read a not-yet-populated user id and silently zero
+    // everything out with no retry once auth actually resolves.
+    if (isAuthLoading) return
     if (selectedPeriod === 'custom' && !customRange) return
-    fetchDashboardData(selectedPeriod, customRange ?? undefined)
-  }, [selectedPeriod, customRange, fetchDashboardData])
+
+    Promise.all([
+      fetchDashboardData(selectedPeriod, customRange ?? undefined),
+      fetchBudgetOverview(),
+    ]).finally(() => setHasLoadedOnce(true))
+  }, [isAuthLoading, userId, selectedPeriod, customRange, fetchDashboardData, fetchBudgetOverview])
 
   useEffect(() => {
-    fetchBudgetOverview()
-  }, [fetchBudgetOverview])
+    function handleFocus() {
+      if (isAuthLoading) return
+      if (selectedPeriod === 'custom' && !customRange) return
+      fetchDashboardData(selectedPeriod, customRange ?? undefined)
+      fetchBudgetOverview()
+    }
+
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [isAuthLoading, selectedPeriod, customRange, fetchDashboardData, fetchBudgetOverview])
 
   function handleTabClick(period: DashboardPeriod) {
     if (period === 'custom') {
@@ -55,6 +77,26 @@ export function Dashboard() {
   }
 
   const recentTransactions = transactions.slice(0, 5)
+
+  if (isAuthLoading || !hasLoadedOnce) {
+    return (
+      <div className="flex animate-pulse flex-col gap-6 px-4 py-4">
+        <div className="h-40 rounded-2xl bg-card" />
+        <div className="flex gap-2">
+          <div className="h-9 w-20 rounded-full bg-card" />
+          <div className="h-9 w-20 rounded-full bg-card" />
+          <div className="h-9 w-20 rounded-full bg-card" />
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="h-20 rounded-2xl bg-card" />
+          <div className="h-20 rounded-2xl bg-card" />
+          <div className="h-20 rounded-2xl bg-card" />
+        </div>
+        <div className="h-36 rounded-2xl bg-card" />
+        <div className="h-48 rounded-2xl bg-card" />
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-6 px-4 py-4">

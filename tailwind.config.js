@@ -6,15 +6,18 @@ export default {
       colors: {
         accent: '#6366f1',
         'accent-hover': '#818cf8',
-        surface: '#0b0b10',
-        card: '#13131e',
-        border: '#1f1f30',
         income: '#22c55e',
         expense: '#ef4444',
         amber: '#f59e0b',
         purple: '#a855f7',
-        textprimary: '#f1f5f9',
-        textsecondary: '#94a3b8',
+        // Theme-aware tokens: values come from CSS variables (see index.css)
+        // so every component using these classes flips with data-theme,
+        // while still supporting Tailwind's /opacity modifier syntax.
+        surface: 'rgb(var(--color-surface) / <alpha-value>)',
+        card: 'rgb(var(--color-card) / <alpha-value>)',
+        border: 'rgb(var(--color-border) / <alpha-value>)',
+        textprimary: 'rgb(var(--color-text-primary) / <alpha-value>)',
+        textsecondary: 'rgb(var(--color-text-secondary) / <alpha-value>)',
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],

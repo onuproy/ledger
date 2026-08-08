@@ -130,7 +130,7 @@ export function GoalSheet({ onClose, onSaved }: GoalSheetProps) {
           value={deadline}
           onChange={(e) => setDeadline(e.target.value)}
           min={toDateOnly(new Date())}
-          className="mb-5 min-h-[48px] w-full rounded-lg border border-border bg-surface px-4 py-3 text-textprimary [color-scheme:dark]"
+          className="mb-5 min-h-[48px] w-full rounded-lg border border-border bg-surface px-4 py-3 text-textprimary"
         />
 
         <button

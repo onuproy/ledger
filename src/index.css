@@ -9,24 +9,44 @@
   padding: 0;
 }
 
+/* Dark (default) theme tokens, as R G B channel triples for Tailwind's
+   rgb(var(--x) / <alpha-value>) pattern — keeps /opacity modifiers working. */
+:root {
+  --color-surface: 11 11 16; /* #0b0b10 */
+  --color-card: 19 19 30; /* #13131e */
+  --color-border: 31 31 48; /* #1f1f30 */
+  --color-text-primary: 241 245 249; /* #f1f5f9 */
+  --color-text-secondary: 148 163 184; /* #94a3b8 */
+}
+
+:root[data-theme='light'] {
+  --color-surface: 248 250 252; /* #f8fafc */
+  --color-card: 255 255 255; /* #ffffff */
+  --color-border: 226 232 240; /* #e2e8f0 */
+  --color-text-primary: 15 23 42; /* #0f172a */
+  --color-text-secondary: 71 85 105; /* #475569 */
+}
+
+/* Tells the browser which palette to paint its own native controls with
+   (date/time picker icon, scrollbars, etc.) — without this, an input
+   hardcoded to color-scheme:dark still renders a light-colored calendar
+   icon even when the app is in light mode, making it invisible. */
+:root {
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
 body {
-  background: #0b0b10;
-  color: #f1f5f9;
+  background: rgb(var(--color-surface));
+  color: rgb(var(--color-text-primary));
   font-family: 'Inter', sans-serif;
 }
 
 ::-webkit-scrollbar {
   display: none;
-}
-
-/*
-  Foundational only: the app's colors are fixed hex values in tailwind.config.js,
-  not CSS variables, so this does not yet re-theme every component — just the
-  page background/text as a starting point for a future full light-theme pass.
-*/
-:root[data-theme='light'] body {
-  background: #f8fafc;
-  color: #0f172a;
 }
 
 @media print {

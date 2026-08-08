@@ -15,7 +15,7 @@ export function RingProgress({
   size = 120,
   strokeWidth = 10,
   color = '#6366f1',
-  trackColor = '#1f1f30',
+  trackColor = 'rgb(var(--color-border))',
   children,
 }: RingProgressProps) {
   const clamped = Math.min(100, Math.max(0, percentage))
