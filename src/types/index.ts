@@ -78,7 +78,7 @@ export interface DateFilter {
   label: string
 }
 
-export type DashboardPeriod = '7d' | 'month' | 'year' | 'custom'
+export type DashboardPeriod = 'today' | '7d' | 'month' | 'year' | 'custom'
 
 export interface DateRange {
   start: string

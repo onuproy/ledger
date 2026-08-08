@@ -1,23 +1,52 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Plus, TrendingDown, TrendingUp, ArrowLeftRight } from 'lucide-react'
+import {
+  ArrowDownRight,
+  ArrowLeftRight,
+  ArrowUpRight,
+  Plus,
+  TrendingDown,
+  TrendingUp,
+} from 'lucide-react'
 import { BalanceCard } from '../../components/charts/BalanceCard'
-import { SpendChart } from '../../components/charts/SpendChart'
+import { IncomeExpenseChart } from '../../components/charts/IncomeExpenseChart'
+import { MiniCategoryDonut } from '../../components/charts/MiniCategoryDonut'
 import { BudgetOverviewCard } from '../../components/charts/BudgetOverviewCard'
+import { TopCategoriesList } from '../../components/analytics/TopCategoriesList'
 import { TransactionItem } from '../../components/transactions/TransactionItem'
 import { CustomRangeModal } from '../../components/ui/CustomRangeModal'
 import { useTransactionStore } from '../../store/transactionStore'
 import { useBudgetStore } from '../../store/budgetStore'
 import { useAuthStore } from '../../store/authStore'
+import { groupByCategory, toCategorySlices } from '../../lib/categoryAggregation'
+import { formatCurrency, formatDate, formatDayMonth, formatMonthYear } from '../../lib/formatters'
 import type { DashboardPeriod, DateRange } from '../../types'
 
 const PERIOD_TABS: { value: DashboardPeriod; label: string }[] = [
+  { value: 'today', label: 'Today' },
   { value: '7d', label: '7 Days' },
   { value: 'month', label: 'Month' },
   { value: 'year', label: 'Year' },
   { value: 'custom', label: 'Custom' },
 ]
+
+function getPeriodLabel(period: DashboardPeriod, customRange: DateRange | null): string {
+  switch (period) {
+    case 'today':
+      return `Today, ${formatDayMonth()}`
+    case '7d':
+      return 'Last 7 Days'
+    case 'month':
+      return formatMonthYear()
+    case 'year':
+      return String(new Date().getFullYear())
+    case 'custom':
+      return customRange
+        ? `${formatDate(customRange.start)} – ${formatDate(customRange.end)}`
+        : 'Custom'
+  }
+}
 
 export function Dashboard() {
   const navigate = useNavigate()
@@ -29,7 +58,15 @@ export function Dashboard() {
   const isAuthLoading = useAuthStore((s) => s.isLoading)
   const userId = useAuthStore((s) => s.user?.id)
 
-  const { transactions, income, expense, dailyTotals, fetchDashboardData } = useTransactionStore()
+  const {
+    transactions,
+    income,
+    expense,
+    weeklyIncomeExpense,
+    allTimeBalance,
+    fetchDashboardData,
+    fetchAllTimeBalance,
+  } = useTransactionStore()
   const { overview, fetchBudgetOverview } = useBudgetStore()
 
   useEffect(() => {
@@ -43,8 +80,17 @@ export function Dashboard() {
     Promise.all([
       fetchDashboardData(selectedPeriod, customRange ?? undefined),
       fetchBudgetOverview(),
+      fetchAllTimeBalance(),
     ]).finally(() => setHasLoadedOnce(true))
-  }, [isAuthLoading, userId, selectedPeriod, customRange, fetchDashboardData, fetchBudgetOverview])
+  }, [
+    isAuthLoading,
+    userId,
+    selectedPeriod,
+    customRange,
+    fetchDashboardData,
+    fetchBudgetOverview,
+    fetchAllTimeBalance,
+  ])
 
   useEffect(() => {
     function handleFocus() {
@@ -52,11 +98,19 @@ export function Dashboard() {
       if (selectedPeriod === 'custom' && !customRange) return
       fetchDashboardData(selectedPeriod, customRange ?? undefined)
       fetchBudgetOverview()
+      fetchAllTimeBalance()
     }
 
     window.addEventListener('focus', handleFocus)
     return () => window.removeEventListener('focus', handleFocus)
-  }, [isAuthLoading, selectedPeriod, customRange, fetchDashboardData, fetchBudgetOverview])
+  }, [
+    isAuthLoading,
+    selectedPeriod,
+    customRange,
+    fetchDashboardData,
+    fetchBudgetOverview,
+    fetchAllTimeBalance,
+  ])
 
   function handleTabClick(period: DashboardPeriod) {
     if (period === 'custom') {
@@ -77,6 +131,11 @@ export function Dashboard() {
   }
 
   const recentTransactions = transactions.slice(0, 5)
+
+  // Derived purely from the already-fetched period transactions — no extra
+  // Supabase calls, matches the same data the "Recent" list below reads.
+  const topCategories = useMemo(() => groupByCategory(transactions), [transactions])
+  const categorySlices = useMemo(() => toCategorySlices(topCategories, 3), [topCategories])
 
   if (isAuthLoading || !hasLoadedOnce) {
     return (
@@ -100,7 +159,12 @@ export function Dashboard() {
 
   return (
     <div className="flex flex-col gap-6 px-4 py-4">
-      <BalanceCard balance={income - expense} income={income} expense={expense} />
+      <BalanceCard
+        balance={allTimeBalance}
+        income={income}
+        expense={expense}
+        periodLabel={getPeriodLabel(selectedPeriod, customRange)}
+      />
 
       <div className="flex gap-2 overflow-x-auto">
         {PERIOD_TABS.map((tab) => (
@@ -136,7 +200,31 @@ export function Dashboard() {
         />
       </div>
 
-      <SpendChart data={dailyTotals} />
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-2xl bg-income/10 p-4">
+          <ArrowUpRight size={16} className="text-income" />
+          <p className="mt-2 text-xs text-income/80">Income</p>
+          <p className="truncate text-lg font-bold text-income">{formatCurrency(income)}</p>
+        </div>
+        <div className="rounded-2xl bg-expense/10 p-4">
+          <ArrowDownRight size={16} className="text-expense" />
+          <p className="mt-2 text-xs text-expense/80">Expense</p>
+          <p className="truncate text-lg font-bold text-expense">{formatCurrency(expense)}</p>
+        </div>
+      </div>
+
+      <IncomeExpenseChart
+        data={weeklyIncomeExpense}
+        action={
+          <Link to="/analytics" className="text-sm text-accent">
+            See all →
+          </Link>
+        }
+      />
+
+      <MiniCategoryDonut slices={categorySlices} />
+
+      <TopCategoriesList items={topCategories.slice(0, 3)} />
 
       <div>
         <div className="mb-2 flex items-center justify-between">

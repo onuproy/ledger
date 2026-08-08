@@ -46,6 +46,11 @@ export function formatFullDate(date: string | Date = new Date()): string {
   }).format(d)
 }
 
+export function formatDayMonth(date: string | Date = new Date()): string {
+  const d = typeof date === 'string' ? new Date(date) : date
+  return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long' }).format(d)
+}
+
 export function formatTime(time: string): string {
   const [hoursStr, minutesStr] = time.split(':')
   const hours = Number(hoursStr)

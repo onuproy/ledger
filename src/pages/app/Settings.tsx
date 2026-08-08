@@ -429,6 +429,12 @@ export function Settings() {
         <LogOut size={18} /> Sign Out
       </button>
 
+      <div className="py-6 text-center">
+        <p className="text-xs text-textsecondary">Ledger</p>
+        <p className="text-xs text-textsecondary">Version 0.1.0</p>
+        <p className="mt-1 text-xs text-textsecondary">© 2026 Onup Roy</p>
+      </div>
+
       {showEditProfile && (
         <EditProfileModal
           onClose={() => setShowEditProfile(false)}

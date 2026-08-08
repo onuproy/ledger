@@ -9,6 +9,7 @@ import type {
   DashboardPeriod,
   DateRange,
   ExportFilters,
+  IncomeExpensePoint,
   Transaction,
   TransactionFilters,
   TransactionInput,
@@ -24,9 +25,15 @@ interface TransactionState {
   income: number
   expense: number
   dailyTotals: DailyTotal[]
+  weeklyIncomeExpense: IncomeExpensePoint[]
   period: DashboardPeriod
   isLoading: boolean
   fetchDashboardData: (period: DashboardPeriod, customRange?: DateRange) => Promise<void>
+
+  // All-time net balance (income - expense across every transaction ever),
+  // independent of the dashboard period filter
+  allTimeBalance: number
+  fetchAllTimeBalance: () => Promise<void>
 
   // Transactions list screen: paginated, filtered
   list: TransactionWithCategory[]
@@ -91,6 +98,32 @@ export function groupByDay(transactions: Transaction[]): DailyTotal[] {
   return days
 }
 
+/** Buckets this calendar month's income/expense into Week 1, Week 2, etc. */
+export function groupByWeekOfMonth(transactions: Transaction[]): IncomeExpensePoint[] {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth()
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const numWeeks = Math.ceil(daysInMonth / 7)
+
+  const weeks: IncomeExpensePoint[] = Array.from({ length: numWeeks }, (_, i) => ({
+    label: `Week ${i + 1}`,
+    income: 0,
+    expense: 0,
+  }))
+
+  for (const t of transactions) {
+    const d = new Date(t.date.slice(0, 10))
+    if (d.getFullYear() !== year || d.getMonth() !== month) continue
+
+    const weekIndex = Math.min(Math.floor((d.getDate() - 1) / 7), numWeeks - 1)
+    if (t.type === 'income') weeks[weekIndex].income += t.amount
+    else weeks[weekIndex].expense += t.amount
+  }
+
+  return weeks
+}
+
 async function adjustAccountBalance(accountId: string, delta: number): Promise<void> {
   const { data } = await supabase
     .from('accounts')
@@ -148,8 +181,10 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
   income: 0,
   expense: 0,
   dailyTotals: groupByDay([]),
+  weeklyIncomeExpense: groupByWeekOfMonth([]),
   period: 'month',
   isLoading: false,
+  allTimeBalance: 0,
 
   list: [],
   listHasMore: true,
@@ -160,7 +195,14 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
   fetchDashboardData: async (period, customRange) => {
     const userId = useAuthStore.getState().user?.id
     if (!userId) {
-      set({ transactions: [], income: 0, expense: 0, dailyTotals: groupByDay([]), period })
+      set({
+        transactions: [],
+        income: 0,
+        expense: 0,
+        dailyTotals: groupByDay([]),
+        weeklyIncomeExpense: groupByWeekOfMonth([]),
+        period,
+      })
       return
     }
 
@@ -171,8 +213,10 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
         ? customRange
         : getRangeForPeriod(period === 'custom' ? 'month' : period)
     const last7 = getLast7DaysRange()
-    const start = periodRange.start < last7.start ? periodRange.start : last7.start
-    const end = periodRange.end > last7.end ? periodRange.end : last7.end
+    const thisMonth = getRangeForPeriod('month')
+    const sortedEnds = [periodRange.end, last7.end, thisMonth.end].sort()
+    const start = [periodRange.start, last7.start, thisMonth.start].sort()[0]
+    const end = sortedEnds[sortedEnds.length - 1]
 
     const { data, error } = await supabase
       .from('transactions')
@@ -197,8 +241,30 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
       income: calculateIncome(periodTransactions),
       expense: calculateExpense(periodTransactions),
       dailyTotals: groupByDay(fetched),
+      weeklyIncomeExpense: groupByWeekOfMonth(fetched),
       isLoading: false,
     })
+  },
+
+  fetchAllTimeBalance: async () => {
+    const userId = useAuthStore.getState().user?.id
+    if (!userId) {
+      set({ allTimeBalance: 0 })
+      return
+    }
+
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('type, amount')
+      .eq('user_id', userId)
+
+    if (error || !data) return
+
+    const rows = data as { type: 'income' | 'expense'; amount: number }[]
+    const totalIncome = rows.filter((t) => t.type === 'income').reduce((sum, t) => sum + t.amount, 0)
+    const totalExpense = rows.filter((t) => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0)
+
+    set({ allTimeBalance: totalIncome - totalExpense })
   },
 
   fetchTransactions: async (filters, reset = true) => {
@@ -466,6 +532,7 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
       dailyTotals: groupByDay([]),
       listOffset: 0,
       listHasMore: true,
+      allTimeBalance: 0,
     })
 
     return { error: null }

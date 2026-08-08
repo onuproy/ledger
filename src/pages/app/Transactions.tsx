@@ -25,6 +25,7 @@ import type {
 } from '../../types'
 
 const PERIOD_TABS: { value: DashboardPeriod; label: string }[] = [
+  { value: 'today', label: 'Today' },
   { value: '7d', label: '7 Days' },
   { value: 'month', label: 'Month' },
   { value: 'year', label: 'Year' },
@@ -77,7 +78,7 @@ export function Transactions() {
   const [searchQuery, setSearchQuery] = useState('')
   const [showFilters, setShowFilters] = useState(false)
 
-  const [selectedPeriod, setSelectedPeriod] = useState<DashboardPeriod>('month')
+  const [selectedPeriod, setSelectedPeriod] = useState<DashboardPeriod>('today')
   const [customRange, setCustomRange] = useState<DateRange | null>(null)
   const [showCustomModal, setShowCustomModal] = useState(false)
   const [selectedType, setSelectedType] = useState<TransactionTypeFilter>('all')

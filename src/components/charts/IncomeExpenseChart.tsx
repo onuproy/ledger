@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from 'recharts'
 import type { TooltipContentProps } from 'recharts'
 import { formatCurrency } from '../../lib/formatters'
@@ -5,6 +6,7 @@ import type { IncomeExpensePoint } from '../../types'
 
 interface IncomeExpenseChartProps {
   data: IncomeExpensePoint[]
+  action?: ReactNode
 }
 
 function ChartTooltip({ active, payload, label }: TooltipContentProps) {
@@ -21,10 +23,13 @@ function ChartTooltip({ active, payload, label }: TooltipContentProps) {
   )
 }
 
-export function IncomeExpenseChart({ data }: IncomeExpenseChartProps) {
+export function IncomeExpenseChart({ data, action }: IncomeExpenseChartProps) {
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
-      <h2 className="mb-2 text-sm font-medium text-textprimary">Income vs Expense</h2>
+      <div className="mb-2 flex items-center justify-between">
+        <h2 className="text-sm font-medium text-textprimary">Income vs Expense</h2>
+        {action}
+      </div>
       <div style={{ height: 200 }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} barGap={4}>

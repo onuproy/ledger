@@ -4,9 +4,13 @@ export function toDateOnly(date: Date): string {
   return date.toISOString().slice(0, 10)
 }
 
-export function getRangeForPeriod(period: '7d' | 'month' | 'year'): DateRange {
+export function getRangeForPeriod(period: 'today' | '7d' | 'month' | 'year'): DateRange {
   const now = new Date()
   const end = toDateOnly(now)
+
+  if (period === 'today') {
+    return { start: end, end }
+  }
 
   if (period === '7d') {
     const start = new Date(now)

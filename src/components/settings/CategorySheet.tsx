@@ -102,12 +102,12 @@ export function CategorySheet({
         </div>
 
         <h3 className="mb-2 text-sm font-medium text-textsecondary">Icon</h3>
-        <div className="mb-4 grid max-h-48 grid-cols-5 gap-2 overflow-y-auto">
+        <div className="mb-4 grid max-h-64 grid-cols-5 gap-2 overflow-y-auto">
           {CATEGORY_ICON_OPTIONS.map((emoji, i) => (
             <button
               key={`${emoji}-${i}`}
               onClick={() => setIcon(emoji)}
-              className={`flex h-11 w-11 items-center justify-center rounded-full bg-surface text-lg ${
+              className={`flex h-11 w-11 items-center justify-center rounded-full bg-surface text-[30px] leading-none ${
                 icon === emoji ? 'ring-2 ring-accent' : ''
               }`}
             >
