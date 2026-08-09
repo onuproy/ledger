@@ -7,7 +7,6 @@ import { calculateIncome, calculateExpense } from './transactionStore'
 import type {
   AnalyticsPeriod,
   Category,
-  CategorySlice,
   IncomeExpensePoint,
   TopCategoryItem,
   TransactionType,
@@ -19,12 +18,23 @@ const OTHERS_COLOR = '#6b7280'
 const MAX_DONUT_SLICES = 6
 const COMPUTE_LIMIT = 10
 
+/** Category breakdown row used by the Analytics donut chart + breakdown list (icon included, unlike the shared CategorySlice type). */
+export interface CategoryBreakdown {
+  id: string
+  name: string
+  icon: string
+  color: string
+  amount: number
+  percentage: number
+}
+
 interface AnalyticsState {
   period: AnalyticsPeriod
   totalIncome: number
   totalExpense: number
   incomeVsExpense: IncomeExpensePoint[]
-  spendingByCategory: CategorySlice[]
+  expenseCategoryBreakdown: CategoryBreakdown[]
+  incomeCategoryBreakdown: CategoryBreakdown[]
   dailyTotals: TrendPoint[]
   topCategories: TopCategoryItem[]
   biggestTransactions: TransactionWithCategory[]
@@ -108,12 +118,15 @@ function bucketIncomeExpense(
   return buckets
 }
 
-function bucketSpendingByCategory(transactions: TransactionWithCategory[]): CategorySlice[] {
-  const totals = new Map<string, { name: string; color: string; amount: number }>()
+function bucketCategoryBreakdown(
+  transactions: TransactionWithCategory[],
+  type: TransactionType
+): CategoryBreakdown[] {
+  const totals = new Map<string, { name: string; icon: string; color: string; amount: number }>()
   let grandTotal = 0
 
   for (const t of transactions) {
-    if (t.type !== 'expense') continue
+    if (t.type !== type) continue
     grandTotal += t.amount
     const existing = totals.get(t.category_id)
     if (existing) {
@@ -121,33 +134,40 @@ function bucketSpendingByCategory(transactions: TransactionWithCategory[]): Cate
     } else {
       totals.set(t.category_id, {
         name: t.category?.name ?? 'Uncategorized',
+        icon: t.category?.icon ?? '💰',
         color: t.category?.color ?? OTHERS_COLOR,
         amount: t.amount,
       })
     }
   }
 
-  const sorted = Array.from(totals.values()).sort((a, b) => b.amount - a.amount)
+  const sorted = Array.from(totals.entries())
+    .map(([id, c]) => ({ id, ...c }))
+    .sort((a, b) => b.amount - a.amount)
   const top = sorted.slice(0, MAX_DONUT_SLICES)
   const othersAmount = sorted.slice(MAX_DONUT_SLICES).reduce((sum, c) => sum + c.amount, 0)
 
-  const slices: CategorySlice[] = top.map((c) => ({
+  const breakdown: CategoryBreakdown[] = top.map((c) => ({
+    id: c.id,
     name: c.name,
+    icon: c.icon,
     color: c.color,
     amount: c.amount,
     percentage: grandTotal > 0 ? (c.amount / grandTotal) * 100 : 0,
   }))
 
   if (othersAmount > 0) {
-    slices.push({
+    breakdown.push({
+      id: 'others',
       name: 'Others',
+      icon: '📦',
       color: OTHERS_COLOR,
       amount: othersAmount,
       percentage: grandTotal > 0 ? (othersAmount / grandTotal) * 100 : 0,
     })
   }
 
-  return slices
+  return breakdown
 }
 
 function computeTopCategories(
@@ -204,7 +224,8 @@ export const useAnalyticsStore = create<AnalyticsState>((set, get) => ({
   totalIncome: 0,
   totalExpense: 0,
   incomeVsExpense: [],
-  spendingByCategory: [],
+  expenseCategoryBreakdown: [],
+  incomeCategoryBreakdown: [],
   dailyTotals: [],
   topCategories: [],
   biggestTransactions: [],
@@ -220,7 +241,8 @@ export const useAnalyticsStore = create<AnalyticsState>((set, get) => ({
         totalIncome: 0,
         totalExpense: 0,
         incomeVsExpense: [],
-        spendingByCategory: [],
+        expenseCategoryBreakdown: [],
+        incomeCategoryBreakdown: [],
         dailyTotals: [],
         topCategories: [],
         biggestTransactions: [],
@@ -252,7 +274,8 @@ export const useAnalyticsStore = create<AnalyticsState>((set, get) => ({
       totalIncome: calculateIncome(transactions),
       totalExpense: calculateExpense(transactions),
       incomeVsExpense: bucketIncomeExpense(transactions, period),
-      spendingByCategory: bucketSpendingByCategory(transactions),
+      expenseCategoryBreakdown: bucketCategoryBreakdown(transactions, 'expense'),
+      incomeCategoryBreakdown: bucketCategoryBreakdown(transactions, 'income'),
       dailyTotals: computeDailyTotals(transactions, range.start, range.end),
       topCategories: computeTopCategories(transactions, COMPUTE_LIMIT),
       biggestTransactions: computeBiggestTransactions(transactions, COMPUTE_LIMIT),

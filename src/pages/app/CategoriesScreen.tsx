@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Lock } from 'lucide-react'
 import { Header } from '../../components/layout/Header'
 import { useCategoryStore } from '../../store/categoryStore'
+import { useAuthStore } from '../../store/authStore'
 import { CategorySheet } from '../../components/settings/CategorySheet'
 import { ActionSheet } from '../../components/ui/ActionSheet'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
@@ -16,6 +17,10 @@ export function CategoriesScreen() {
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  const isAuthLoading = useAuthStore((s) => s.isLoading)
+  const userId = useAuthStore((s) => s.user?.id)
 
   const categories = useCategoryStore((s) => s.categories)
   const transactionCounts = useCategoryStore((s) => s.transactionCounts)
@@ -23,8 +28,13 @@ export function CategoriesScreen() {
   const deleteCategory = useCategoryStore((s) => s.deleteCategory)
 
   useEffect(() => {
-    fetchCategories()
-  }, [fetchCategories])
+    // Wait for auth to resolve — on a hard reload, authStore.initialize()
+    // hasn't finished yet, so fetching immediately would read a
+    // not-yet-populated user id and silently return no categories.
+    if (isAuthLoading) return
+    setIsLoading(true)
+    fetchCategories().finally(() => setIsLoading(false))
+  }, [isAuthLoading, userId, fetchCategories])
 
   const filtered = categories.filter((c) => c.type === activeTab)
 
@@ -73,39 +83,49 @@ export function CategoriesScreen() {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        {filtered.map((cat) => {
-          const count = transactionCounts[cat.id] ?? 0
-          return (
-            <button
-              key={cat.id}
-              onClick={() => handleCardClick(cat)}
-              className="relative flex flex-col items-start gap-2 rounded-2xl border border-border bg-card p-4 text-left"
-            >
-              <div
-                className="flex h-12 w-12 items-center justify-center rounded-full text-2xl"
-                style={{ backgroundColor: `${cat.color}26` }}
-              >
-                {cat.icon}
-              </div>
-              <div className="min-w-0 w-full">
-                <p className="truncate font-medium text-textprimary">{cat.name}</p>
-                <p className="text-xs text-textsecondary">
-                  {count} transaction{count === 1 ? '' : 's'} this month
-                </p>
-              </div>
-              {cat.is_default && (
-                <Lock size={14} className="absolute bottom-3 right-3 text-textsecondary" />
-              )}
-            </button>
-          )
-        })}
-      </div>
+      {isAuthLoading || isLoading ? (
+        <div className="grid grid-cols-2 gap-3">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-32 animate-pulse rounded-2xl bg-card" />
+          ))}
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-3">
+            {filtered.map((cat) => {
+              const count = transactionCounts[cat.id] ?? 0
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => handleCardClick(cat)}
+                  className="relative flex flex-col items-start gap-2 rounded-2xl border border-border bg-card p-4 text-left"
+                >
+                  <div
+                    className="flex h-12 w-12 items-center justify-center rounded-full text-2xl"
+                    style={{ backgroundColor: `${cat.color}26` }}
+                  >
+                    {cat.icon}
+                  </div>
+                  <div className="min-w-0 w-full">
+                    <p className="truncate font-medium text-textprimary">{cat.name}</p>
+                    <p className="text-xs text-textsecondary">
+                      {count} transaction{count === 1 ? '' : 's'} this month
+                    </p>
+                  </div>
+                  {cat.is_default && (
+                    <Lock size={14} className="absolute bottom-3 right-3 text-textsecondary" />
+                  )}
+                </button>
+              )
+            })}
+          </div>
 
-      {filtered.length === 0 && (
-        <p className="py-6 text-center text-sm text-textsecondary">
-          No {activeTab} categories yet
-        </p>
+          {filtered.length === 0 && (
+            <p className="py-6 text-center text-sm text-textsecondary">
+              No {activeTab} categories yet
+            </p>
+          )}
+        </>
       )}
 
       <button

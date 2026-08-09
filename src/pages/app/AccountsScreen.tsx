@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Header } from '../../components/layout/Header'
 import { useAccountStore } from '../../store/accountStore'
+import { useAuthStore } from '../../store/authStore'
 import { AccountCard } from '../../components/settings/AccountCard'
 import { AccountSheet } from '../../components/settings/AccountSheet'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
@@ -13,6 +14,10 @@ export function AccountsScreen() {
   const [deleteTarget, setDeleteTarget] = useState<Account | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  const isAuthLoading = useAuthStore((s) => s.isLoading)
+  const userId = useAuthStore((s) => s.user?.id)
 
   const accounts = useAccountStore((s) => s.accounts)
   const transactionCounts = useAccountStore((s) => s.transactionCounts)
@@ -20,8 +25,10 @@ export function AccountsScreen() {
   const deleteAccount = useAccountStore((s) => s.deleteAccount)
 
   useEffect(() => {
-    fetchAccounts()
-  }, [fetchAccounts])
+    if (isAuthLoading) return
+    setIsLoading(true)
+    fetchAccounts().finally(() => setIsLoading(false))
+  }, [isAuthLoading, userId, fetchAccounts])
 
   async function handleConfirmDelete() {
     if (!deleteTarget) return
@@ -41,23 +48,33 @@ export function AccountsScreen() {
     <div className="flex flex-col gap-4 px-4 py-4">
       <Header title="Accounts" backTo="/settings" />
 
-      <div className="flex flex-col gap-3">
-        {accounts.map((acc) => (
-          <AccountCard
-            key={acc.id}
-            account={acc}
-            count={transactionCounts[acc.id] ?? 0}
-            onClick={() => {
-              setEditingAccount(acc)
-              setShowSheet(true)
-            }}
-            onDelete={() => setDeleteTarget(acc)}
-          />
-        ))}
-      </div>
+      {isAuthLoading || isLoading ? (
+        <div className="flex flex-col gap-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-20 animate-pulse rounded-2xl bg-card" />
+          ))}
+        </div>
+      ) : (
+        <>
+          <div className="flex flex-col gap-3">
+            {accounts.map((acc) => (
+              <AccountCard
+                key={acc.id}
+                account={acc}
+                count={transactionCounts[acc.id] ?? 0}
+                onClick={() => {
+                  setEditingAccount(acc)
+                  setShowSheet(true)
+                }}
+                onDelete={() => setDeleteTarget(acc)}
+              />
+            ))}
+          </div>
 
-      {accounts.length === 0 && (
-        <p className="py-6 text-center text-sm text-textsecondary">No accounts yet</p>
+          {accounts.length === 0 && (
+            <p className="py-6 text-center text-sm text-textsecondary">No accounts yet</p>
+          )}
+        </>
       )}
 
       <button

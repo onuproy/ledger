@@ -4,9 +4,14 @@ import { formatCurrency } from '../../lib/formatters'
 interface MonthlyComparisonCardProps {
   thisMonth: number
   lastMonth: number
+  formatAmount?: (n: number) => string
 }
 
-export function MonthlyComparisonCard({ thisMonth, lastMonth }: MonthlyComparisonCardProps) {
+export function MonthlyComparisonCard({
+  thisMonth,
+  lastMonth,
+  formatAmount = formatCurrency,
+}: MonthlyComparisonCardProps) {
   const diff =
     lastMonth > 0 ? ((thisMonth - lastMonth) / lastMonth) * 100 : thisMonth > 0 ? 100 : 0
   const isMore = diff >= 0
@@ -18,11 +23,11 @@ export function MonthlyComparisonCard({ thisMonth, lastMonth }: MonthlyCompariso
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs text-textsecondary">This month</p>
-          <p className="font-semibold text-textprimary">{formatCurrency(thisMonth)}</p>
+          <p className="font-semibold text-textprimary">{formatAmount(thisMonth)}</p>
         </div>
         <div className="text-right">
           <p className="text-xs text-textsecondary">Last month</p>
-          <p className="font-semibold text-textprimary">{formatCurrency(lastMonth)}</p>
+          <p className="font-semibold text-textprimary">{formatAmount(lastMonth)}</p>
         </div>
       </div>
 

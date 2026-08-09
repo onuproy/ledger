@@ -14,24 +14,25 @@ import type { TrendPoint } from '../../types'
 
 interface SpendingTrendChartProps {
   data: TrendPoint[]
+  formatAmount?: (n: number) => string
 }
 
-function ChartTooltip({ active, payload, label }: TooltipContentProps) {
-  if (!active || !payload?.length) return null
-  const value = payload[0].value ?? 0
-
-  return (
-    <div className="rounded-lg border border-border bg-card px-3 py-2 text-xs shadow-lg">
-      <p className="mb-1 text-textsecondary">{label}</p>
-      <p className="font-medium text-textprimary">{formatCurrency(Number(value))}</p>
-    </div>
-  )
-}
-
-export function SpendingTrendChart({ data }: SpendingTrendChartProps) {
+export function SpendingTrendChart({ data, formatAmount = formatCurrency }: SpendingTrendChartProps) {
   const gradientId = useId()
   const average =
     data.length > 0 ? data.reduce((sum, p) => sum + p.total, 0) / data.length : 0
+
+  function ChartTooltip({ active, payload, label }: TooltipContentProps) {
+    if (!active || !payload?.length) return null
+    const value = payload[0].value ?? 0
+
+    return (
+      <div className="rounded-lg border border-border bg-card px-3 py-2 text-xs shadow-lg">
+        <p className="mb-1 text-textsecondary">{label}</p>
+        <p className="font-medium text-textprimary">{formatAmount(Number(value))}</p>
+      </div>
+    )
+  }
 
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
@@ -61,7 +62,7 @@ export function SpendingTrendChart({ data }: SpendingTrendChartProps) {
       </div>
       <div className="mt-2 flex items-center justify-center gap-2 text-xs text-textsecondary">
         <span className="inline-block h-0 w-4 border-t-2 border-dashed border-amber" />
-        Average: {formatCurrency(average)}
+        Average: {formatAmount(average)}
       </div>
     </div>
   )

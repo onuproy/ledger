@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { useGoalStore } from '../../store/goalStore'
+import { useAuthStore } from '../../store/authStore'
 import { GoalCard } from '../../components/goals/GoalCard'
 import { GoalSheet } from '../../components/goals/GoalSheet'
 import { AddFundsModal } from '../../components/goals/AddFundsModal'
@@ -14,13 +15,19 @@ export function Goals() {
   const [showCompleted, setShowCompleted] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  const isAuthLoading = useAuthStore((s) => s.isLoading)
+  const userId = useAuthStore((s) => s.user?.id)
 
   const goals = useGoalStore((s) => s.goals)
   const fetchGoals = useGoalStore((s) => s.fetchGoals)
 
   useEffect(() => {
-    fetchGoals()
-  }, [fetchGoals])
+    if (isAuthLoading) return
+    setIsLoading(true)
+    fetchGoals().finally(() => setIsLoading(false))
+  }, [isAuthLoading, userId, fetchGoals])
 
   const activeGoals = goals.filter((g) => !g.is_completed)
   const completedGoals = goals.filter((g) => g.is_completed)
@@ -29,17 +36,27 @@ export function Goals() {
     <div className="flex flex-col gap-4 px-4 py-4">
       <h1 className="text-xl font-semibold text-textprimary">Goals</h1>
 
-      <div className="grid grid-cols-2 gap-3">
-        {activeGoals.map((g) => (
-          <GoalCard key={g.id} goal={g} onClick={() => setFundsTarget(g)} />
-        ))}
-      </div>
+      {isAuthLoading || isLoading ? (
+        <div className="grid grid-cols-2 gap-3">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-32 animate-pulse rounded-2xl bg-card" />
+          ))}
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-3">
+            {activeGoals.map((g) => (
+              <GoalCard key={g.id} goal={g} onClick={() => setFundsTarget(g)} />
+            ))}
+          </div>
 
-      {goals.length === 0 && (
-        <p className="py-6 text-center text-sm text-textsecondary">No goals yet</p>
+          {goals.length === 0 && (
+            <p className="py-6 text-center text-sm text-textsecondary">No goals yet</p>
+          )}
+        </>
       )}
 
-      {completedGoals.length > 0 && (
+      {!isAuthLoading && !isLoading && completedGoals.length > 0 && (
         <div>
           <button
             onClick={() => setShowCompleted((v) => !v)}

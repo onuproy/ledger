@@ -16,6 +16,7 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { CustomRangeModal } from '../../components/ui/CustomRangeModal'
 import { Toast, type ToastType } from '../../components/ui/Toast'
 import { useTransactionStore } from '../../store/transactionStore'
+import { useAuthStore } from '../../store/authStore'
 import { formatCurrency, formatGroupDate } from '../../lib/formatters'
 import type {
   DashboardPeriod,
@@ -97,6 +98,9 @@ export function Transactions() {
 
   const sentinelRef = useRef<HTMLDivElement>(null)
 
+  const isAuthLoading = useAuthStore((s) => s.isLoading)
+  const userId = useAuthStore((s) => s.user?.id)
+
   const income = useTransactionStore((s) => s.income)
   const expense = useTransactionStore((s) => s.expense)
   const fetchDashboardData = useTransactionStore((s) => s.fetchDashboardData)
@@ -124,17 +128,23 @@ export function Transactions() {
   }, [location, navigate])
 
   useEffect(() => {
+    // Wait for auth to resolve — on a hard reload landing directly on this
+    // route, authStore.initialize() hasn't finished yet, so fetching
+    // immediately would read a not-yet-populated user id and silently
+    // zero everything out with no retry once auth actually resolves.
+    if (isAuthLoading) return
     if (selectedPeriod === 'custom' && !customRange) return
     fetchDashboardData(selectedPeriod, customRange ?? undefined)
-  }, [selectedPeriod, customRange, fetchDashboardData])
+  }, [isAuthLoading, userId, selectedPeriod, customRange, fetchDashboardData])
 
   useEffect(() => {
+    if (isAuthLoading) return
     if (selectedPeriod === 'custom' && !customRange) return
     fetchTransactions(
       { period: selectedPeriod, customRange: customRange ?? undefined, type: selectedType },
       true
     )
-  }, [selectedPeriod, customRange, selectedType, fetchTransactions])
+  }, [isAuthLoading, userId, selectedPeriod, customRange, selectedType, fetchTransactions])
 
   useEffect(() => {
     const el = sentinelRef.current

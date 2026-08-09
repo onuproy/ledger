@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useBudgetStore } from '../../store/budgetStore'
+import { useAuthStore } from '../../store/authStore'
 import { RingProgress } from '../../components/charts/RingProgress'
 import { SetBudgetSheet } from '../../components/budget/SetBudgetSheet'
 import { Toast, type ToastType } from '../../components/ui/Toast'
@@ -38,6 +39,10 @@ export function Budget() {
   const [showSheet, setShowSheet] = useState(false)
   const [presetCategoryId, setPresetCategoryId] = useState<string | undefined>(undefined)
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  const isAuthLoading = useAuthStore((s) => s.isLoading)
+  const userId = useAuthStore((s) => s.user?.id)
 
   const items = useBudgetStore((s) => s.items)
   const totalBudgeted = useBudgetStore((s) => s.totalBudgeted)
@@ -45,8 +50,10 @@ export function Budget() {
   const fetchBudgets = useBudgetStore((s) => s.fetchBudgets)
 
   useEffect(() => {
-    fetchBudgets(month, year)
-  }, [month, year, fetchBudgets])
+    if (isAuthLoading) return
+    setIsLoading(true)
+    fetchBudgets(month, year).finally(() => setIsLoading(false))
+  }, [isAuthLoading, userId, month, year, fetchBudgets])
 
   function handlePrevMonth() {
     const next = shiftMonth(month, year, -1)
@@ -94,36 +101,49 @@ export function Budget() {
         </button>
       </div>
 
-      <div className="flex flex-col items-center gap-4 rounded-2xl border border-border bg-card p-6">
-        <RingProgress percentage={overallPct} size={120} strokeWidth={10} color={progressHex(overallPct)}>
-          <span className="text-2xl font-bold text-textprimary">{Math.round(overallPct)}%</span>
-        </RingProgress>
-        <p className="text-sm text-textsecondary">used</p>
+      {isAuthLoading || isLoading ? (
+        <>
+          <div className="h-64 animate-pulse rounded-2xl bg-card" />
+          <div className="flex flex-col gap-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-20 animate-pulse rounded-2xl bg-card" />
+            ))}
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="flex flex-col items-center gap-4 rounded-2xl border border-border bg-card p-6">
+            <RingProgress percentage={overallPct} size={120} strokeWidth={10} color={progressHex(overallPct)}>
+              <span className="text-2xl font-bold text-textprimary">{Math.round(overallPct)}%</span>
+            </RingProgress>
+            <p className="text-sm text-textsecondary">used</p>
 
-        <div className="text-center">
-          <p className="text-sm text-textsecondary">
-            {formatCurrency(totalSpent)} spent of {formatCurrency(totalBudgeted)} budgeted
-          </p>
-          <p className={`mt-1 font-medium ${remaining >= 0 ? 'text-income' : 'text-expense'}`}>
-            {remaining < 0 ? '-' : ''}
-            {formatCurrency(remaining)} remaining
-          </p>
-          {daysLeft !== null && (
-            <p className="mt-1 text-xs text-textsecondary">
-              {daysLeft} day{daysLeft === 1 ? '' : 's'} left this month
-            </p>
+            <div className="text-center">
+              <p className="text-sm text-textsecondary">
+                {formatCurrency(totalSpent)} spent of {formatCurrency(totalBudgeted)} budgeted
+              </p>
+              <p className={`mt-1 font-medium ${remaining >= 0 ? 'text-income' : 'text-expense'}`}>
+                {remaining < 0 ? '-' : ''}
+                {formatCurrency(remaining)} remaining
+              </p>
+              {daysLeft !== null && (
+                <p className="mt-1 text-xs text-textsecondary">
+                  {daysLeft} day{daysLeft === 1 ? '' : 's'} left this month
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            {items.map((item) => (
+              <BudgetCategoryCard key={item.category.id} item={item} onAddBudget={handleAddBudget} />
+            ))}
+          </div>
+
+          {items.length === 0 && (
+            <p className="py-6 text-center text-sm text-textsecondary">No expense categories yet</p>
           )}
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-3">
-        {items.map((item) => (
-          <BudgetCategoryCard key={item.category.id} item={item} onAddBudget={handleAddBudget} />
-        ))}
-      </div>
-
-      {items.length === 0 && (
-        <p className="py-6 text-center text-sm text-textsecondary">No expense categories yet</p>
+        </>
       )}
 
       <button
