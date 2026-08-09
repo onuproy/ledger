@@ -1,6 +1,7 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
-import type { TooltipContentProps } from 'recharts'
+import { Cell, Label, Pie, PieChart, Sector, Tooltip } from 'recharts'
+import type { PieSectorShapeProps, TooltipContentProps } from 'recharts'
 import { formatCurrency } from '../../lib/formatters'
 import type { CategorySlice } from '../../types'
 
@@ -21,7 +22,30 @@ function ChartTooltip({ active, payload }: TooltipContentProps) {
 }
 
 export function MiniCategoryDonut({ slices }: MiniCategoryDonutProps) {
+  const [activeIndex, setActiveIndex] = useState(0)
   const topThree = slices.slice(0, 3)
+  const activeSlice = slices[activeIndex] ?? slices[0]
+
+  // recharts v3 dropped Pie's `activeIndex` prop, so click-driven expansion
+  // is done by hand here: render every sector via `shape` and grow the one
+  // matching our own activeIndex state (rather than recharts' hover-based
+  // `isActive`, which wouldn't stay expanded after the click ends).
+  function renderSector(sectorProps: PieSectorShapeProps) {
+    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, index } = sectorProps
+    const isActive = index === activeIndex
+    return (
+      <Sector
+        cx={cx}
+        cy={cy}
+        innerRadius={isActive ? innerRadius - 3 : innerRadius}
+        outerRadius={isActive ? outerRadius + 8 : outerRadius}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={fill}
+        style={isActive ? { filter: 'brightness(1.15)' } : undefined}
+      />
+    )
+  }
 
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
@@ -36,25 +60,50 @@ export function MiniCategoryDonut({ slices }: MiniCategoryDonutProps) {
         <p className="py-8 text-center text-sm text-textsecondary">No expenses this period</p>
       ) : (
         <>
-          <div style={{ height: 160 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={slices}
-                  dataKey="amount"
-                  nameKey="name"
-                  innerRadius="55%"
-                  outerRadius="85%"
-                  paddingAngle={2}
-                  stroke="none"
-                >
-                  {slices.map((slice) => (
-                    <Cell key={slice.name} fill={slice.color} />
-                  ))}
-                </Pie>
-                <Tooltip content={ChartTooltip} />
-              </PieChart>
-            </ResponsiveContainer>
+          <div className="flex justify-center">
+            <PieChart width={220} height={220}>
+              <Pie
+                data={slices}
+                dataKey="amount"
+                nameKey="name"
+                innerRadius={55}
+                outerRadius={90}
+                paddingAngle={2}
+                stroke="none"
+                strokeWidth={0}
+                shape={renderSector}
+                onClick={(_, index) => setActiveIndex(index)}
+              >
+                {slices.map((slice) => (
+                  <Cell key={slice.name} fill={slice.color} />
+                ))}
+                {activeSlice && (
+                  <Label
+                    content={({ viewBox }) => {
+                      const { cx, cy } = viewBox as { cx: number; cy: number }
+                      return (
+                        <g>
+                          <text x={cx} y={cy - 8} textAnchor="middle" fill="#94a3b8" fontSize={11}>
+                            {activeSlice.name}
+                          </text>
+                          <text
+                            x={cx}
+                            y={cy + 12}
+                            textAnchor="middle"
+                            fill="#f1f5f9"
+                            fontSize={15}
+                            fontWeight="bold"
+                          >
+                            {formatCurrency(activeSlice.amount)}
+                          </text>
+                        </g>
+                      )
+                    }}
+                  />
+                )}
+              </Pie>
+              <Tooltip content={ChartTooltip} />
+            </PieChart>
           </div>
 
           <div className="mt-3 flex flex-col gap-2">

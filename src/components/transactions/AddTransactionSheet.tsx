@@ -339,20 +339,28 @@ export function AddTransactionSheet({
             <div className="mt-5">
               <h3 className="mb-2 text-sm font-medium text-textsecondary">To Account</h3>
               <div className="flex gap-2 overflow-x-auto">
-                {accounts.map((acc) => (
-                  <button
-                    key={acc.id}
-                    onClick={() => setToAccountId(acc.id)}
-                    disabled={acc.id === fromAccountId}
-                    className={`min-h-[40px] shrink-0 rounded-full px-4 py-2 text-sm font-medium disabled:opacity-30 ${
-                      toAccountId === acc.id
-                        ? 'bg-blue-500 text-white'
-                        : 'border border-border text-textsecondary'
-                    }`}
-                  >
-                    {acc.name}
-                  </button>
-                ))}
+                {accounts.map((acc) => {
+                  const isDisabled = acc.id === fromAccountId
+                  return (
+                    <button
+                      key={acc.id}
+                      onClick={() => {
+                        if (isDisabled) return
+                        setToAccountId(acc.id)
+                      }}
+                      disabled={isDisabled}
+                      className={`min-h-[40px] shrink-0 rounded-full px-4 py-2 text-sm font-medium ${
+                        isDisabled
+                          ? 'cursor-not-allowed border border-border text-textsecondary opacity-40'
+                          : toAccountId === acc.id
+                            ? 'bg-blue-500 text-white'
+                            : 'border border-border text-textsecondary'
+                      }`}
+                    >
+                      {acc.name}
+                    </button>
+                  )
+                })}
                 {accounts.length === 0 && (
                   <p className="text-sm text-textsecondary">No accounts yet</p>
                 )}

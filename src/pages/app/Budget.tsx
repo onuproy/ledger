@@ -14,15 +14,15 @@ function shiftMonth(month: number, year: number, delta: number): { month: number
 }
 
 function progressColorClass(pct: number): string {
-  if (pct > 90) return 'bg-expense'
-  if (pct >= 70) return 'bg-amber'
-  return 'bg-income'
+  if (pct >= 100) return 'bg-expense'
+  if (pct >= 80) return 'bg-amber'
+  return 'bg-accent'
 }
 
 function progressHex(pct: number): string {
-  if (pct > 90) return '#ef4444'
-  if (pct >= 70) return '#f59e0b'
-  return '#22c55e'
+  if (pct >= 100) return '#ef4444'
+  if (pct >= 80) return '#f59e0b'
+  return '#6366f1'
 }
 
 function daysLeftInMonth(month: number, year: number): number | null {
@@ -76,6 +76,9 @@ export function Budget() {
   const remaining = totalBudgeted - totalSpent
   const daysLeft = daysLeftInMonth(month, year)
   const expenseCategories = items.map((i) => i.category)
+  const budgetsNeedingAttention = items.filter(
+    (i) => i.budget && i.budget.amount > 0 && (i.spent / i.budget.amount) * 100 >= 80
+  ).length
 
   return (
     <div className="flex flex-col gap-4 px-4 py-4">
@@ -112,6 +115,15 @@ export function Budget() {
         </>
       ) : (
         <>
+          {budgetsNeedingAttention > 0 && (
+            <div className="flex items-center gap-2 rounded-2xl border border-amber bg-amber/10 px-4 py-3">
+              <span className="text-sm font-medium text-amber">
+                ⚠️ {budgetsNeedingAttention} budget{budgetsNeedingAttention === 1 ? '' : 's'} need
+                attention
+              </span>
+            </div>
+          )}
+
           <div className="flex flex-col items-center gap-4 rounded-2xl border border-border bg-card p-6">
             <RingProgress percentage={overallPct} size={120} strokeWidth={10} color={progressHex(overallPct)}>
               <span className="text-2xl font-bold text-textprimary">{Math.round(overallPct)}%</span>
@@ -209,7 +221,8 @@ function BudgetCategoryCard({ item, onAddBudget }: BudgetCategoryCardProps) {
   }
 
   const pct = budget.amount > 0 ? (spent / budget.amount) * 100 : 0
-  const isOverBudget = spent > budget.amount
+  const isOverBudget = pct >= 100
+  const isNearLimit = pct >= 80 && pct < 100
 
   return (
     <div
@@ -247,7 +260,10 @@ function BudgetCategoryCard({ item, onAddBudget }: BudgetCategoryCardProps) {
       </div>
 
       {isOverBudget && (
-        <p className="mt-2 text-xs font-medium text-expense">Over budget!</p>
+        <p className="mt-2 text-xs font-medium text-expense">Over budget 🔴</p>
+      )}
+      {isNearLimit && (
+        <p className="mt-2 text-xs font-medium text-amber">⚠️ {Math.round(pct)}% used</p>
       )}
     </div>
   )

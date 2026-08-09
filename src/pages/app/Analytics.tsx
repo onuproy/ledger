@@ -9,6 +9,7 @@ import { CategoryBreakdownList } from '../../components/analytics/CategoryBreakd
 import { MonthlyComparisonCard } from '../../components/analytics/MonthlyComparisonCard'
 import { TransactionItem } from '../../components/transactions/TransactionItem'
 import { useAnalyticsStore } from '../../store/analyticsStore'
+import { useAuthStore } from '../../store/authStore'
 import type { AnalyticsPeriod, TransactionType } from '../../types'
 
 const PERIOD_TABS: { value: AnalyticsPeriod; label: string }[] = [
@@ -29,6 +30,10 @@ const shortAmount = (n: number): string => {
 export function Analytics() {
   const [period, setPeriod] = useState<AnalyticsPeriod>('month')
   const [activeTab, setActiveTab] = useState<TransactionType>('expense')
+  const [isLoading, setIsLoading] = useState(true)
+
+  const isAuthLoading = useAuthStore((s) => s.isLoading)
+  const userId = useAuthStore((s) => s.user?.id)
 
   const totalIncome = useAnalyticsStore((s) => s.totalIncome)
   const totalExpense = useAnalyticsStore((s) => s.totalExpense)
@@ -44,12 +49,19 @@ export function Analytics() {
   const fetchMonthlyComparison = useAnalyticsStore((s) => s.fetchMonthlyComparison)
 
   useEffect(() => {
-    fetchAnalytics(period)
-  }, [period, fetchAnalytics])
+    // Wait for auth to resolve — on a hard reload landing directly on this
+    // route, authStore.initialize() hasn't finished yet, so fetching
+    // immediately would read a not-yet-populated user id and silently
+    // show all-zero totals with no retry once auth actually resolves.
+    if (isAuthLoading) return
+    setIsLoading(true)
+    fetchAnalytics(period).finally(() => setIsLoading(false))
+  }, [isAuthLoading, userId, period, fetchAnalytics])
 
   useEffect(() => {
+    if (isAuthLoading) return
     fetchMonthlyComparison()
-  }, [fetchMonthlyComparison])
+  }, [isAuthLoading, userId, fetchMonthlyComparison])
 
   const netSavings = totalIncome - totalExpense
   const savingsRate = totalIncome > 0 ? (netSavings / totalIncome) * 100 : 0
@@ -96,75 +108,95 @@ export function Analytics() {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-xl border border-border bg-card p-4">
-          <ArrowUpRight size={16} className="text-income" />
-          <p className="mt-2 text-xs text-textsecondary">Total Income</p>
-          <p className="truncate text-lg font-bold text-income">{shortAmount(totalIncome)}</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <ArrowDownRight size={16} className="text-expense" />
-          <p className="mt-2 text-xs text-textsecondary">Total Expense</p>
-          <p className="truncate text-lg font-bold text-expense">
-            {shortAmount(totalExpense)}
-          </p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <PiggyBank size={16} className="text-accent" />
-          <p className="mt-2 text-xs text-textsecondary">Net Savings</p>
-          <p className="truncate text-lg font-bold text-accent">
-            {netSavings < 0 ? '-' : ''}
-            {shortAmount(netSavings)}
-          </p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <Percent size={16} className="text-purple" />
-          <p className="mt-2 text-xs text-textsecondary">Savings Rate</p>
-          <p className="truncate text-lg font-bold text-purple">
-            {Math.round(savingsRate)}%
-          </p>
-        </div>
-      </div>
-
-      <IncomeExpenseChart data={incomeVsExpense} />
-
-      <CategoryDonutChart
-        data={activeCategoryBreakdown}
-        title={activeTab === 'expense' ? 'Spending by Category' : 'Income by Category'}
-        emptyMessage={activeTab === 'expense' ? 'No expenses this period' : 'No income this period'}
-        formatAmount={shortAmount}
-      />
-
-      <CategoryBreakdownList
-        items={activeCategoryBreakdown}
-        emptyMessage={activeTab === 'expense' ? 'No expenses this period' : 'No income this period'}
-        formatAmount={shortAmount}
-      />
-
-      <SpendingTrendChart data={dailyTotals} formatAmount={shortAmount} />
-
-      <TopCategoriesList items={topFiveCategories} />
-
-      <div>
-        <h2 className="mb-2 text-sm font-medium text-textprimary">Biggest Transactions</h2>
-        {topFiveTransactions.length === 0 ? (
-          <p className="rounded-2xl border border-border bg-card px-4 py-6 text-center text-sm text-textsecondary">
-            No transactions this period
-          </p>
-        ) : (
-          <div className="divide-y divide-border rounded-2xl border border-border bg-card px-4">
-            {topFiveTransactions.map((t) => (
-              <TransactionItem key={t.id} transaction={t} />
+      {isAuthLoading || isLoading ? (
+        <>
+          <div className="grid grid-cols-2 gap-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-24 animate-pulse rounded-xl bg-card" />
             ))}
           </div>
-        )}
-      </div>
+          <div className="h-48 animate-pulse rounded-2xl bg-card" />
+          <div className="h-72 animate-pulse rounded-2xl bg-card" />
+          <div className="h-40 animate-pulse rounded-2xl bg-card" />
+          <div className="h-40 animate-pulse rounded-2xl bg-card" />
+        </>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl border border-border bg-card p-4">
+              <ArrowUpRight size={16} className="text-income" />
+              <p className="mt-2 text-xs text-textsecondary">Total Income</p>
+              <p className="truncate text-lg font-bold text-income">{shortAmount(totalIncome)}</p>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4">
+              <ArrowDownRight size={16} className="text-expense" />
+              <p className="mt-2 text-xs text-textsecondary">Total Expense</p>
+              <p className="truncate text-lg font-bold text-expense">
+                {shortAmount(totalExpense)}
+              </p>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4">
+              <PiggyBank size={16} className="text-accent" />
+              <p className="mt-2 text-xs text-textsecondary">Net Savings</p>
+              <p className="truncate text-lg font-bold text-accent">
+                {netSavings < 0 ? '-' : ''}
+                {shortAmount(netSavings)}
+              </p>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4">
+              <Percent size={16} className="text-purple" />
+              <p className="mt-2 text-xs text-textsecondary">Savings Rate</p>
+              <p className="truncate text-lg font-bold text-purple">
+                {Math.round(savingsRate)}%
+              </p>
+            </div>
+          </div>
 
-      <MonthlyComparisonCard
-        thisMonth={thisMonthExpense}
-        lastMonth={lastMonthExpense}
-        formatAmount={shortAmount}
-      />
+          <IncomeExpenseChart data={incomeVsExpense} />
+
+          <CategoryDonutChart
+            data={activeCategoryBreakdown}
+            title={activeTab === 'expense' ? 'Spending by Category' : 'Income by Category'}
+            emptyMessage={
+              activeTab === 'expense' ? 'No expenses this period' : 'No income this period'
+            }
+            formatAmount={shortAmount}
+          />
+
+          <CategoryBreakdownList
+            items={activeCategoryBreakdown}
+            emptyMessage={
+              activeTab === 'expense' ? 'No expenses this period' : 'No income this period'
+            }
+            formatAmount={shortAmount}
+          />
+
+          <SpendingTrendChart data={dailyTotals} formatAmount={shortAmount} />
+
+          <TopCategoriesList items={topFiveCategories} />
+
+          <div>
+            <h2 className="mb-2 text-sm font-medium text-textprimary">Biggest Transactions</h2>
+            {topFiveTransactions.length === 0 ? (
+              <p className="rounded-2xl border border-border bg-card px-4 py-6 text-center text-sm text-textsecondary">
+                No transactions this period
+              </p>
+            ) : (
+              <div className="divide-y divide-border rounded-2xl border border-border bg-card px-4">
+                {topFiveTransactions.map((t) => (
+                  <TransactionItem key={t.id} transaction={t} />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <MonthlyComparisonCard
+            thisMonth={thisMonthExpense}
+            lastMonth={lastMonthExpense}
+            formatAmount={shortAmount}
+          />
+        </>
+      )}
     </div>
   )
 }
