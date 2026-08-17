@@ -26,6 +26,7 @@ interface BudgetOverviewState {
     month: number,
     year: number
   ) => Promise<{ error: string | null }>
+  deleteBudget: (id: string) => Promise<{ error: string | null }>
 }
 
 export const useBudgetStore = create<BudgetOverviewState>((set) => ({
@@ -182,6 +183,15 @@ export const useBudgetStore = create<BudgetOverviewState>((set) => ({
       month,
       year,
     })
+    if (error) return { error: error.message }
+    return { error: null }
+  },
+
+  deleteBudget: async (id) => {
+    const userId = useAuthStore.getState().user?.id
+    if (!userId) return { error: 'Not signed in' }
+
+    const { error } = await supabase.from('budgets').delete().eq('id', id)
     if (error) return { error: error.message }
     return { error: null }
   },

@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, MoreVertical } from 'lucide-react'
 import { useBudgetStore } from '../../store/budgetStore'
 import { useAuthStore } from '../../store/authStore'
 import { RingProgress } from '../../components/charts/RingProgress'
 import { SetBudgetSheet } from '../../components/budget/SetBudgetSheet'
+import { ActionSheet } from '../../components/ui/ActionSheet'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { Toast, type ToastType } from '../../components/ui/Toast'
 import { formatCurrency, formatMonthYear } from '../../lib/formatters'
 import type { BudgetCategoryItem, Category } from '../../types'
@@ -38,6 +40,10 @@ export function Budget() {
   const [year, setYear] = useState(now.getFullYear())
   const [showSheet, setShowSheet] = useState(false)
   const [presetCategoryId, setPresetCategoryId] = useState<string | undefined>(undefined)
+  const [editingItem, setEditingItem] = useState<BudgetCategoryItem | null>(null)
+  const [actionItem, setActionItem] = useState<BudgetCategoryItem | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<BudgetCategoryItem | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -48,6 +54,7 @@ export function Budget() {
   const totalBudgeted = useBudgetStore((s) => s.totalBudgeted)
   const totalSpent = useBudgetStore((s) => s.totalSpent)
   const fetchBudgets = useBudgetStore((s) => s.fetchBudgets)
+  const deleteBudget = useBudgetStore((s) => s.deleteBudget)
 
   useEffect(() => {
     if (isAuthLoading) return
@@ -68,8 +75,30 @@ export function Budget() {
   }
 
   function handleAddBudget(category: Category) {
+    setEditingItem(null)
     setPresetCategoryId(category.id)
     setShowSheet(true)
+  }
+
+  function handleEditBudget(item: BudgetCategoryItem) {
+    setEditingItem(item)
+    setShowSheet(true)
+  }
+
+  async function handleConfirmDelete() {
+    if (!deleteTarget?.budget) return
+    setIsDeleting(true)
+    const result = await deleteBudget(deleteTarget.budget.id)
+    setIsDeleting(false)
+    setDeleteTarget(null)
+
+    if (result.error) {
+      setToast({ message: result.error, type: 'error' })
+      return
+    }
+
+    fetchBudgets(month, year)
+    setToast({ message: 'Budget deleted', type: 'success' })
   }
 
   const overallPct = totalBudgeted > 0 ? Math.min((totalSpent / totalBudgeted) * 100, 100) : 0
@@ -148,7 +177,12 @@ export function Budget() {
 
           <div className="flex flex-col gap-3">
             {items.map((item) => (
-              <BudgetCategoryCard key={item.category.id} item={item} onAddBudget={handleAddBudget} />
+              <BudgetCategoryCard
+                key={item.category.id}
+                item={item}
+                onAddBudget={handleAddBudget}
+                onOpenActions={setActionItem}
+              />
             ))}
           </div>
 
@@ -160,6 +194,7 @@ export function Budget() {
 
       <button
         onClick={() => {
+          setEditingItem(null)
           setPresetCategoryId(undefined)
           setShowSheet(true)
         }}
@@ -173,12 +208,47 @@ export function Budget() {
           month={month}
           year={year}
           categories={expenseCategories}
-          initialCategoryId={presetCategoryId}
-          onClose={() => setShowSheet(false)}
+          initialCategoryId={editingItem?.category.id ?? presetCategoryId}
+          initialAmount={editingItem?.budget?.amount}
+          initialPeriod={editingItem?.budget?.period}
+          onClose={() => {
+            setShowSheet(false)
+            setEditingItem(null)
+          }}
           onSaved={() => {
             fetchBudgets(month, year)
-            setToast({ message: 'Budget saved', type: 'success' })
+            setToast({
+              message: editingItem ? 'Budget updated' : 'Budget saved',
+              type: 'success',
+            })
           }}
+        />
+      )}
+
+      {actionItem && (
+        <ActionSheet
+          options={[
+            {
+              label: 'Edit',
+              onClick: () => handleEditBudget(actionItem),
+            },
+            {
+              label: 'Delete',
+              destructive: true,
+              onClick: () => setDeleteTarget(actionItem),
+            },
+          ]}
+          onClose={() => setActionItem(null)}
+        />
+      )}
+
+      {deleteTarget && (
+        <ConfirmDialog
+          title="Delete budget?"
+          message={`The budget for "${deleteTarget.category.name}" will be removed. Spending history is not affected.`}
+          confirmLabel={isDeleting ? 'Deleting…' : 'Delete'}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setDeleteTarget(null)}
         />
       )}
 
@@ -192,9 +262,10 @@ export function Budget() {
 interface BudgetCategoryCardProps {
   item: BudgetCategoryItem
   onAddBudget: (category: Category) => void
+  onOpenActions: (item: BudgetCategoryItem) => void
 }
 
-function BudgetCategoryCard({ item, onAddBudget }: BudgetCategoryCardProps) {
+function BudgetCategoryCard({ item, onAddBudget, onOpenActions }: BudgetCategoryCardProps) {
   const { category, budget, spent } = item
 
   if (!budget) {
@@ -257,6 +328,14 @@ function BudgetCategoryCard({ item, onAddBudget }: BudgetCategoryCardProps) {
           strokeWidth={4}
           color={progressHex(pct)}
         />
+
+        <button
+          onClick={() => onOpenActions(item)}
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-textsecondary hover:bg-surface"
+          aria-label={`${category.name} budget options`}
+        >
+          <MoreVertical size={18} />
+        </button>
       </div>
 
       {isOverBudget && (

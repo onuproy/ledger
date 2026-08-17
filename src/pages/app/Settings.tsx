@@ -17,6 +17,7 @@ import {
   Upload,
 } from 'lucide-react'
 import { EditProfileModal } from '../../components/settings/EditProfileModal'
+import { ProfileAvatar } from '../../components/settings/ProfileAvatar'
 import { PinSetupModal } from '../../components/settings/PinSetupModal'
 import { PrivacyPolicyModal } from '../../components/settings/PrivacyPolicyModal'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
@@ -118,6 +119,7 @@ export function Settings() {
   const profileName = useProfileStore((s) => s.name)
   const profileEmail = useProfileStore((s) => s.email)
   const avatarColor = useProfileStore((s) => s.avatarColor)
+  const avatarEmoji = useProfileStore((s) => s.avatarEmoji)
   const currency = useProfileStore((s) => s.currency)
   const language = useProfileStore((s) => s.language)
   const saveProfile = useProfileStore((s) => s.saveProfile)
@@ -240,12 +242,12 @@ export function Settings() {
 
       <SettingsSection title={t('profile')}>
         <div className="flex items-center gap-4 px-4 py-4">
-          <div
-            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-xl font-semibold text-white"
-            style={{ backgroundColor: avatarColor }}
-          >
-            {profileName.trim() ? profileName.trim()[0].toUpperCase() : '?'}
-          </div>
+          <ProfileAvatar
+            name={profileName}
+            avatarColor={avatarColor}
+            avatarEmoji={avatarEmoji}
+            className="h-14 w-14 shrink-0 text-xl"
+          />
           <div className="min-w-0 flex-1">
             <p className="truncate font-medium text-textprimary">{profileName || 'Add your name'}</p>
             <p className="truncate text-sm text-textsecondary">{profileEmail}</p>
@@ -431,7 +433,7 @@ export function Settings() {
 
       <div className="py-6 text-center">
         <p className="text-xs text-textsecondary">Ledger</p>
-        <p className="text-xs text-textsecondary">Version 0.2.0</p>
+        <p className="text-xs text-textsecondary">Version 0.3.0</p>
         <p className="mt-1 text-xs text-textsecondary">© 2026 Onup Roy</p>
       </div>
 

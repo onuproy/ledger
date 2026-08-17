@@ -33,3 +33,8 @@ export const GOAL_ICON_OPTIONS: string[] = [
   '🛥️', '🐶', '🎮', '📷', '🩺', '🎁',
   '🏋️', '🎨',
 ]
+
+export const AVATAR_EMOJI_OPTIONS: string[] = [
+  '😎', '🐱', '🐶', '🦊', '🐼', '💰', '🚀', '🌟',
+  '🎯', '🍀', '☕', '🎮', '📈', '🧠', '❤️', '🔥',
+]

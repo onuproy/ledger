@@ -2,22 +2,31 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 import { useProfileStore } from '../../store/profileStore'
 import { Toast } from '../ui/Toast'
+import { ProfileAvatar } from './ProfileAvatar'
 import { SWATCH_COLORS } from '../../constants/colors'
+import { AVATAR_EMOJI_OPTIONS } from '../../constants/icons'
 
 interface EditProfileModalProps {
   onClose: () => void
   onSaved: () => void
 }
 
+type AvatarStyle = 'initial' | 'emoji'
+
 export function EditProfileModal({ onClose, onSaved }: EditProfileModalProps) {
   const currentName = useProfileStore((s) => s.name)
   const currentColor = useProfileStore((s) => s.avatarColor)
+  const currentEmoji = useProfileStore((s) => s.avatarEmoji)
   const saveProfile = useProfileStore((s) => s.saveProfile)
 
   const [name, setName] = useState(currentName)
   const [avatarColor, setAvatarColor] = useState(currentColor)
+  const [avatarStyle, setAvatarStyle] = useState<AvatarStyle>(currentEmoji ? 'emoji' : 'initial')
+  const [emoji, setEmoji] = useState(currentEmoji ?? AVATAR_EMOJI_OPTIONS[0])
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const previewEmoji = avatarStyle === 'emoji' ? emoji : null
 
   async function handleSave() {
     if (!name.trim()) {
@@ -26,7 +35,11 @@ export function EditProfileModal({ onClose, onSaved }: EditProfileModalProps) {
     }
 
     setIsSaving(true)
-    const result = await saveProfile({ name: name.trim(), avatar_color: avatarColor })
+    const result = await saveProfile({
+      name: name.trim(),
+      avatar_color: avatarColor,
+      avatar_emoji: avatarStyle === 'emoji' ? emoji : null,
+    })
     setIsSaving(false)
 
     if (result.error) {
@@ -59,12 +72,12 @@ export function EditProfileModal({ onClose, onSaved }: EditProfileModalProps) {
         <h2 className="mb-4 text-lg font-semibold text-textprimary">Edit Profile</h2>
 
         <div className="mb-4 flex justify-center">
-          <div
-            className="flex h-16 w-16 items-center justify-center rounded-full text-2xl font-semibold text-white"
-            style={{ backgroundColor: avatarColor }}
-          >
-            {name.trim() ? name.trim()[0].toUpperCase() : '?'}
-          </div>
+          <ProfileAvatar
+            name={name}
+            avatarColor={avatarColor}
+            avatarEmoji={previewEmoji}
+            className="h-16 w-16 text-2xl"
+          />
         </div>
 
         <input
@@ -88,6 +101,42 @@ export function EditProfileModal({ onClose, onSaved }: EditProfileModalProps) {
             />
           ))}
         </div>
+
+        <h3 className="mb-2 text-sm font-medium text-textsecondary">Avatar Style</h3>
+        <div className="mb-4 flex rounded-full bg-surface p-1">
+          <button
+            onClick={() => setAvatarStyle('initial')}
+            className={`min-h-[40px] flex-1 rounded-full text-sm font-medium ${
+              avatarStyle === 'initial' ? 'bg-accent text-white' : 'text-textsecondary'
+            }`}
+          >
+            Initial
+          </button>
+          <button
+            onClick={() => setAvatarStyle('emoji')}
+            className={`min-h-[40px] flex-1 rounded-full text-sm font-medium ${
+              avatarStyle === 'emoji' ? 'bg-accent text-white' : 'text-textsecondary'
+            }`}
+          >
+            Emoji
+          </button>
+        </div>
+
+        {avatarStyle === 'emoji' && (
+          <div className="-m-1.5 mb-5 grid grid-cols-4 gap-2 p-1.5">
+            {AVATAR_EMOJI_OPTIONS.map((option) => (
+              <button
+                key={option}
+                onClick={() => setEmoji(option)}
+                className={`flex h-12 w-12 items-center justify-center rounded-full bg-surface text-2xl ${
+                  emoji === option ? 'ring-2 ring-[#6366f1]' : ''
+                }`}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+        )}
 
         <button
           onClick={handleSave}

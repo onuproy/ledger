@@ -6,6 +6,7 @@ interface ProfileState {
   name: string
   email: string
   avatarColor: string
+  avatarEmoji: string | null
   currency: string
   language: string
   isAdmin: boolean
@@ -18,6 +19,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   name: '',
   email: '',
   avatarColor: '#6366f1',
+  avatarEmoji: null,
   currency: 'BDT',
   language: 'en',
   isAdmin: false,
@@ -29,7 +31,14 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     } = await supabase.auth.getSession()
 
     if (!session?.user) {
-      set({ name: '', email: '', avatarColor: '#6366f1', currency: 'BDT', language: 'en' })
+      set({
+        name: '',
+        email: '',
+        avatarColor: '#6366f1',
+        avatarEmoji: null,
+        currency: 'BDT',
+        language: 'en',
+      })
       return
     }
 
@@ -45,6 +54,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
         name: data.name ?? '',
         email,
         avatarColor: data.avatar_color ?? '#6366f1',
+        avatarEmoji: data.avatar_emoji ?? null,
         currency: data.currency ?? 'BDT',
         language: data.language ?? 'en',
         isAdmin: data.is_admin ?? false,
@@ -60,6 +70,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       name: meta.name ?? '',
       email,
       avatarColor: meta.avatar_color ?? '#6366f1',
+      avatarEmoji: null,
       currency: meta.currency ?? 'BDT',
       language: meta.language ?? 'en',
       isLoading: false,
@@ -77,6 +88,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     const next = {
       name: partial.name ?? current.name,
       avatar_color: partial.avatar_color ?? current.avatarColor,
+      avatar_emoji: partial.avatar_emoji !== undefined ? partial.avatar_emoji : current.avatarEmoji,
       currency: partial.currency ?? current.currency,
       language: partial.language ?? current.language,
     }
@@ -92,6 +104,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     set({
       name: next.name,
       avatarColor: next.avatar_color,
+      avatarEmoji: next.avatar_emoji,
       currency: next.currency,
       language: next.language,
     })

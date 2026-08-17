@@ -49,6 +49,21 @@ body {
   display: none;
 }
 
+/* Recharts' SVG wrapper/surface — and, on click, the <g class="recharts-pie">
+   layer itself (it renders with tabindex="0") — pick up the browser's
+   default focus ring, which shows as a stray white box around the chart. */
+.recharts-wrapper,
+.recharts-surface,
+.recharts-pie,
+.recharts-sector,
+.recharts-layer,
+.recharts-pie:focus,
+.recharts-sector:focus,
+g[tabindex]:focus,
+svg[tabindex]:focus {
+  outline: none !important;
+}
+
 @media print {
   body {
     background: #ffffff;

@@ -192,6 +192,7 @@ export interface TopCategoryItem {
 export interface ProfileInput {
   name: string
   avatar_color: string
+  avatar_emoji?: string | null
   currency: string
   language: string
 }

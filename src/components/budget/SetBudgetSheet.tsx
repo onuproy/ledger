@@ -10,6 +10,8 @@ interface SetBudgetSheetProps {
   year: number
   categories: Category[]
   initialCategoryId?: string
+  initialAmount?: number
+  initialPeriod?: BudgetPeriod
   onClose: () => void
   onSaved: () => void
 }
@@ -19,12 +21,15 @@ export function SetBudgetSheet({
   year,
   categories,
   initialCategoryId,
+  initialAmount,
+  initialPeriod,
   onClose,
   onSaved,
 }: SetBudgetSheetProps) {
+  const isEdit = initialAmount !== undefined
   const [categoryId, setCategoryId] = useState(initialCategoryId ?? categories[0]?.id ?? '')
-  const [amountStr, setAmountStr] = useState('')
-  const [period, setPeriod] = useState<BudgetPeriod>('monthly')
+  const [amountStr, setAmountStr] = useState(initialAmount !== undefined ? String(initialAmount) : '')
+  const [period, setPeriod] = useState<BudgetPeriod>(initialPeriod ?? 'monthly')
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -73,7 +78,9 @@ export function SetBudgetSheet({
 
         <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-border" />
 
-        <h2 className="mb-1 text-lg font-semibold text-textprimary">Set Budget</h2>
+        <h2 className="mb-1 text-lg font-semibold text-textprimary">
+          {isEdit ? 'Edit Budget' : 'Set Budget'}
+        </h2>
         <p className="mb-4 text-sm text-textsecondary">
           {formatMonthYear(new Date(year, month - 1, 1))}
         </p>
@@ -82,7 +89,8 @@ export function SetBudgetSheet({
         <select
           value={categoryId}
           onChange={(e) => setCategoryId(e.target.value)}
-          className="mb-4 min-h-[48px] w-full rounded-lg border border-border bg-surface px-4 py-3 text-textprimary"
+          disabled={isEdit}
+          className="mb-4 min-h-[48px] w-full rounded-lg border border-border bg-surface px-4 py-3 text-textprimary disabled:opacity-60"
         >
           {categories.map((c) => (
             <option key={c.id} value={c.id}>

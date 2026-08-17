@@ -60,8 +60,13 @@ export function MiniCategoryDonut({ slices }: MiniCategoryDonutProps) {
         <p className="py-8 text-center text-sm text-textsecondary">No expenses this period</p>
       ) : (
         <>
-          <div className="flex justify-center">
-            <PieChart width={220} height={220}>
+          <div className="flex justify-center outline-none focus:outline-none">
+            <PieChart
+              width={220}
+              height={220}
+              className="outline-none focus:outline-none"
+              style={{ outline: 'none' }}
+            >
               <Pie
                 data={slices}
                 dataKey="amount"
@@ -71,6 +76,7 @@ export function MiniCategoryDonut({ slices }: MiniCategoryDonutProps) {
                 paddingAngle={2}
                 stroke="none"
                 strokeWidth={0}
+                tabIndex={-1}
                 shape={renderSector}
                 onClick={(_, index) => setActiveIndex(index)}
               >
@@ -83,14 +89,20 @@ export function MiniCategoryDonut({ slices }: MiniCategoryDonutProps) {
                       const { cx, cy } = viewBox as { cx: number; cy: number }
                       return (
                         <g>
-                          <text x={cx} y={cy - 8} textAnchor="middle" fill="#94a3b8" fontSize={11}>
+                          <text
+                            x={cx}
+                            y={cy - 8}
+                            textAnchor="middle"
+                            className="fill-current text-textsecondary"
+                            fontSize={11}
+                          >
                             {activeSlice.name}
                           </text>
                           <text
                             x={cx}
                             y={cy + 12}
                             textAnchor="middle"
-                            fill="#f1f5f9"
+                            className="fill-current text-textprimary"
                             fontSize={15}
                             fontWeight="bold"
                           >

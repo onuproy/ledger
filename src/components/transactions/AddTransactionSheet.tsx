@@ -261,7 +261,7 @@ export function AddTransactionSheet({
         {type !== 'transfer' && (
           <div className="mt-5">
             <h3 className="mb-2 text-sm font-medium text-textsecondary">Category</h3>
-            <div className="grid max-h-48 grid-cols-4 gap-3 overflow-y-auto">
+            <div className="-m-1.5 grid max-h-48 grid-cols-4 gap-3 overflow-y-auto p-1.5">
               {filteredCategories.map((cat) => (
                 <button
                   key={cat.id}
@@ -293,7 +293,7 @@ export function AddTransactionSheet({
         {type !== 'transfer' ? (
           <div className="mt-5">
             <h3 className="mb-2 text-sm font-medium text-textsecondary">Account</h3>
-            <div className="flex gap-2 overflow-x-auto">
+            <div className="-mx-1.5 flex gap-2 overflow-x-auto p-1.5">
               {accounts.map((acc) => (
                 <button
                   key={acc.id}

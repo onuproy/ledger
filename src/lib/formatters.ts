@@ -51,6 +51,20 @@ export function formatDayMonth(date: string | Date = new Date()): string {
   return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long' }).format(d)
 }
 
+export function formatHeaderDateTime(date: Date = new Date()): string {
+  const datePart = new Intl.DateTimeFormat('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  }).format(date)
+  const timePart = new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }).format(date)
+  return `${datePart} · ${timePart}`
+}
+
 export function formatTime(time: string): string {
   const [hoursStr, minutesStr] = time.split(':')
   const hours = Number(hoursStr)
