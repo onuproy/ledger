@@ -27,7 +27,13 @@ interface BudgetOverviewState {
     year: number
   ) => Promise<{ error: string | null }>
   deleteBudget: (id: string) => Promise<{ error: string | null }>
+  stopRecurringAndDelete: (budget: Budget) => Promise<{ error: string | null }>
+  ensureRecurringBudgets: (month: number, year: number) => Promise<void>
 }
+
+// Tracks which user/month/year combos have already been checked for
+// recurring auto-copy this session, so it only runs once per month visited.
+const ensuredRecurringKeys = new Set<string>()
 
 export const useBudgetStore = create<BudgetOverviewState>((set) => ({
   overview: [],
@@ -169,7 +175,7 @@ export const useBudgetStore = create<BudgetOverviewState>((set) => ({
     if (existing) {
       const { error } = await supabase
         .from('budgets')
-        .update({ amount: input.amount, period: input.period })
+        .update({ amount: input.amount, period: input.period, is_recurring: input.is_recurring })
         .eq('id', existing.id)
       if (error) return { error: error.message }
       return { error: null }
@@ -180,6 +186,7 @@ export const useBudgetStore = create<BudgetOverviewState>((set) => ({
       category_id: input.category_id,
       amount: input.amount,
       period: input.period,
+      is_recurring: input.is_recurring,
       month,
       year,
     })
@@ -194,5 +201,82 @@ export const useBudgetStore = create<BudgetOverviewState>((set) => ({
     const { error } = await supabase.from('budgets').delete().eq('id', id)
     if (error) return { error: error.message }
     return { error: null }
+  },
+
+  stopRecurringAndDelete: async (budget) => {
+    const userId = useAuthStore.getState().user?.id
+    if (!userId) return { error: 'Not signed in' }
+
+    const { error: updateError } = await supabase
+      .from('budgets')
+      .update({ is_recurring: false })
+      .eq('user_id', userId)
+      .eq('category_id', budget.category_id)
+      .eq('period', budget.period)
+      .eq('is_recurring', true)
+    if (updateError) return { error: updateError.message }
+
+    const { error: deleteError } = await supabase.from('budgets').delete().eq('id', budget.id)
+    if (deleteError) return { error: deleteError.message }
+
+    return { error: null }
+  },
+
+  ensureRecurringBudgets: async (month, year) => {
+    const userId = useAuthStore.getState().user?.id
+    if (!userId) return
+
+    const now = new Date()
+    const currentMonth = now.getMonth() + 1
+    const currentYear = now.getFullYear()
+    const isFuture = year > currentYear || (year === currentYear && month > currentMonth)
+    if (isFuture) return
+
+    const key = `${userId}:${year}-${month}`
+    if (ensuredRecurringKeys.has(key)) return
+    ensuredRecurringKeys.add(key)
+
+    const [existingRes, recurringRes] = await Promise.all([
+      supabase
+        .from('budgets')
+        .select('category_id')
+        .eq('user_id', userId)
+        .eq('month', month)
+        .eq('year', year),
+      supabase.from('budgets').select('*').eq('user_id', userId).eq('is_recurring', true),
+    ])
+
+    if (existingRes.error || recurringRes.error) return
+
+    const existingCategoryIds = new Set(
+      (existingRes.data ?? []).map((b: { category_id: string }) => b.category_id)
+    )
+
+    const isEarlier = (b: Budget) => b.year < year || (b.year === year && b.month < month)
+
+    const latestByCategory = new Map<string, Budget>()
+    for (const b of (recurringRes.data ?? []) as Budget[]) {
+      if (!isEarlier(b)) continue
+      const latest = latestByCategory.get(b.category_id)
+      if (!latest || b.year > latest.year || (b.year === latest.year && b.month > latest.month)) {
+        latestByCategory.set(b.category_id, b)
+      }
+    }
+
+    const toInsert = Array.from(latestByCategory.values())
+      .filter((b) => !existingCategoryIds.has(b.category_id))
+      .map((b) => ({
+        user_id: userId,
+        category_id: b.category_id,
+        amount: b.amount,
+        period: b.period,
+        is_recurring: true,
+        month,
+        year,
+      }))
+
+    if (toInsert.length === 0) return
+
+    await supabase.from('budgets').insert(toInsert)
   },
 }))

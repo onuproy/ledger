@@ -1,13 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import {
-  ArrowDownRight,
-  ArrowUpRight,
-  Plus,
-  Search,
-  SlidersHorizontal,
-  Wallet,
-} from 'lucide-react'
+import { ArrowDownRight, ArrowUpRight, Plus, Search, Wallet } from 'lucide-react'
 import { TransactionItem } from '../../components/transactions/TransactionItem'
 import { AddTransactionSheet } from '../../components/transactions/AddTransactionSheet'
 import type { EntryType } from '../../components/transactions/AddTransactionSheet'
@@ -77,7 +70,6 @@ export function Transactions() {
 
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [showFilters, setShowFilters] = useState(false)
 
   const [selectedPeriod, setSelectedPeriod] = useState<DashboardPeriod>('today')
   const [customRange, setCustomRange] = useState<DateRange | null>(null)
@@ -210,58 +202,49 @@ export function Transactions() {
 
   return (
     <div className="relative flex flex-col gap-4 px-4 py-4">
-      {!searchOpen ? (
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-textprimary">Transactions</h1>
-          <div className="flex items-center gap-1">
+      <div className="sticky top-14 z-10 -mx-4 flex flex-col gap-2 bg-surface px-4 pb-2 pt-1">
+        {!searchOpen ? (
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-semibold text-textprimary">Transactions</h1>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setSearchOpen(true)}
+                className="flex h-10 w-10 items-center justify-center rounded-full text-textsecondary"
+                aria-label="Search"
+              >
+                <Search size={20} />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-textsecondary"
+              />
+              <input
+                autoFocus
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search transactions"
+                className="min-h-[44px] w-full rounded-lg border border-border bg-card pl-9 pr-3 text-textprimary placeholder:text-textsecondary"
+              />
+            </div>
             <button
-              onClick={() => setSearchOpen(true)}
-              className="flex h-10 w-10 items-center justify-center rounded-full text-textsecondary"
-              aria-label="Search"
+              onClick={() => {
+                setSearchOpen(false)
+                setSearchQuery('')
+              }}
+              className="text-sm text-accent"
             >
-              <Search size={20} />
-            </button>
-            <button
-              onClick={() => setShowFilters((v) => !v)}
-              className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                showFilters ? 'text-accent' : 'text-textsecondary'
-              }`}
-              aria-label="Filter"
-            >
-              <SlidersHorizontal size={20} />
+              Cancel
             </button>
           </div>
-        </div>
-      ) : (
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search
-              size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-textsecondary"
-            />
-            <input
-              autoFocus
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search transactions"
-              className="min-h-[44px] w-full rounded-lg border border-border bg-card pl-9 pr-3 text-textprimary placeholder:text-textsecondary"
-            />
-          </div>
-          <button
-            onClick={() => {
-              setSearchOpen(false)
-              setSearchQuery('')
-            }}
-            className="text-sm text-accent"
-          >
-            Cancel
-          </button>
-        </div>
-      )}
+        )}
 
-      {showFilters && (
         <div className="flex flex-col gap-2">
-          <div className="flex gap-2 overflow-x-auto">
+          <div className="flex gap-2 overflow-x-auto px-1 py-1">
             {PERIOD_TABS.map((tab) => (
               <button
                 key={tab.value}
@@ -272,7 +255,7 @@ export function Transactions() {
               </button>
             ))}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 overflow-x-auto px-1 py-1">
             {TYPE_TABS.map((tab) => (
               <button
                 key={tab.value}
@@ -284,7 +267,7 @@ export function Transactions() {
             ))}
           </div>
         </div>
-      )}
+      </div>
 
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-2xl bg-income/10 p-3">

@@ -58,6 +58,7 @@ export interface Budget {
   period: BudgetPeriod
   month: number
   year: number
+  is_recurring?: boolean
 }
 
 export interface Goal {
@@ -147,6 +148,7 @@ export interface BudgetInput {
   category_id: string
   amount: number
   period: BudgetPeriod
+  is_recurring: boolean
 }
 
 export interface BudgetCategoryItem {

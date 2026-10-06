@@ -4,6 +4,7 @@ import { useBudgetStore } from '../../store/budgetStore'
 import { useAuthStore } from '../../store/authStore'
 import { RingProgress } from '../../components/charts/RingProgress'
 import { SetBudgetSheet } from '../../components/budget/SetBudgetSheet'
+import { RecurringDeleteDialog } from '../../components/budget/RecurringDeleteDialog'
 import { ActionSheet } from '../../components/ui/ActionSheet'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { Toast, type ToastType } from '../../components/ui/Toast'
@@ -55,12 +56,20 @@ export function Budget() {
   const totalSpent = useBudgetStore((s) => s.totalSpent)
   const fetchBudgets = useBudgetStore((s) => s.fetchBudgets)
   const deleteBudget = useBudgetStore((s) => s.deleteBudget)
+  const stopRecurringAndDelete = useBudgetStore((s) => s.stopRecurringAndDelete)
+  const ensureRecurringBudgets = useBudgetStore((s) => s.ensureRecurringBudgets)
 
   useEffect(() => {
     if (isAuthLoading) return
     setIsLoading(true)
-    fetchBudgets(month, year).finally(() => setIsLoading(false))
-  }, [isAuthLoading, userId, month, year, fetchBudgets])
+    async function load() {
+      await fetchBudgets(month, year)
+      await ensureRecurringBudgets(month, year)
+      await fetchBudgets(month, year)
+      setIsLoading(false)
+    }
+    load()
+  }, [isAuthLoading, userId, month, year, fetchBudgets, ensureRecurringBudgets])
 
   function handlePrevMonth() {
     const next = shiftMonth(month, year, -1)
@@ -99,6 +108,22 @@ export function Budget() {
 
     fetchBudgets(month, year)
     setToast({ message: 'Budget deleted', type: 'success' })
+  }
+
+  async function handleStopRepeatingDelete() {
+    if (!deleteTarget?.budget) return
+    setIsDeleting(true)
+    const result = await stopRecurringAndDelete(deleteTarget.budget)
+    setIsDeleting(false)
+    setDeleteTarget(null)
+
+    if (result.error) {
+      setToast({ message: result.error, type: 'error' })
+      return
+    }
+
+    fetchBudgets(month, year)
+    setToast({ message: 'Recurring budget stopped and deleted', type: 'success' })
   }
 
   const overallPct = totalBudgeted > 0 ? Math.min((totalSpent / totalBudgeted) * 100, 100) : 0
@@ -211,6 +236,7 @@ export function Budget() {
           initialCategoryId={editingItem?.category.id ?? presetCategoryId}
           initialAmount={editingItem?.budget?.amount}
           initialPeriod={editingItem?.budget?.period}
+          initialIsRecurring={editingItem?.budget?.is_recurring}
           onClose={() => {
             setShowSheet(false)
             setEditingItem(null)
@@ -242,7 +268,17 @@ export function Budget() {
         />
       )}
 
-      {deleteTarget && (
+      {deleteTarget && deleteTarget.budget?.is_recurring && (
+        <RecurringDeleteDialog
+          categoryName={deleteTarget.category.name}
+          isDeleting={isDeleting}
+          onDeleteThisMonth={handleConfirmDelete}
+          onStopRepeating={handleStopRepeatingDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+
+      {deleteTarget && !deleteTarget.budget?.is_recurring && (
         <ConfirmDialog
           title="Delete budget?"
           message={`The budget for "${deleteTarget.category.name}" will be removed. Spending history is not affected.`}
@@ -310,7 +346,14 @@ function BudgetCategoryCard({ item, onAddBudget, onOpenActions }: BudgetCategory
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="truncate font-medium text-textprimary">{category.name}</p>
+          <p className="truncate font-medium text-textprimary">
+            {category.name}
+            {budget.is_recurring && (
+              <span className="ml-1.5 align-middle text-xs" title="Repeats every month">
+                🔁
+              </span>
+            )}
+          </p>
           <p className="text-xs text-textsecondary">
             {formatCurrency(spent)} / {formatCurrency(budget.amount)}
           </p>

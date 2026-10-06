@@ -213,17 +213,6 @@ export function Dashboard() {
         </div>
       </div>
 
-      <IncomeExpenseChart
-        data={weeklyIncomeExpense}
-        action={
-          <Link to="/analytics" className="text-sm text-accent">
-            See all →
-          </Link>
-        }
-      />
-
-      <MiniCategoryDonut slices={categorySlices} />
-
       <TopCategoriesList items={topCategories.slice(0, 3)} />
 
       <div>
@@ -255,6 +244,17 @@ export function Dashboard() {
       </div>
 
       <BudgetOverviewCard items={overview} />
+
+      <IncomeExpenseChart
+        data={weeklyIncomeExpense}
+        action={
+          <Link to="/analytics" className="text-sm text-accent">
+            See all →
+          </Link>
+        }
+      />
+
+      <MiniCategoryDonut slices={categorySlices} />
 
       {showCustomModal && (
         <CustomRangeModal

@@ -12,6 +12,7 @@ interface SetBudgetSheetProps {
   initialCategoryId?: string
   initialAmount?: number
   initialPeriod?: BudgetPeriod
+  initialIsRecurring?: boolean
   onClose: () => void
   onSaved: () => void
 }
@@ -23,6 +24,7 @@ export function SetBudgetSheet({
   initialCategoryId,
   initialAmount,
   initialPeriod,
+  initialIsRecurring,
   onClose,
   onSaved,
 }: SetBudgetSheetProps) {
@@ -30,6 +32,7 @@ export function SetBudgetSheet({
   const [categoryId, setCategoryId] = useState(initialCategoryId ?? categories[0]?.id ?? '')
   const [amountStr, setAmountStr] = useState(initialAmount !== undefined ? String(initialAmount) : '')
   const [period, setPeriod] = useState<BudgetPeriod>(initialPeriod ?? 'monthly')
+  const [isRecurring, setIsRecurring] = useState(initialIsRecurring ?? false)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -47,7 +50,11 @@ export function SetBudgetSheet({
     }
 
     setIsSaving(true)
-    const result = await setBudget({ category_id: categoryId, amount, period }, month, year)
+    const result = await setBudget(
+      { category_id: categoryId, amount, period, is_recurring: isRecurring },
+      month,
+      year
+    )
     setIsSaving(false)
 
     if (result.error) {
@@ -126,6 +133,28 @@ export function SetBudgetSheet({
             }`}
           >
             Weekly
+          </button>
+        </div>
+
+        <div className="mb-5 flex min-h-[48px] items-center justify-between gap-3 rounded-lg border border-border bg-surface px-4 py-3">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-textprimary">🔁 Repeat every month</p>
+            <p className="text-xs text-textsecondary">Auto-applies to upcoming months</p>
+          </div>
+          <button
+            onClick={() => setIsRecurring((v) => !v)}
+            role="switch"
+            aria-checked={isRecurring}
+            aria-label="Repeat every month"
+            className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
+              isRecurring ? 'bg-accent' : 'bg-border'
+            }`}
+          >
+            <span
+              className={`absolute left-1 top-1 h-5 w-5 rounded-full transition-transform ${
+                isRecurring ? 'translate-x-5 bg-white' : 'translate-x-0 bg-textsecondary'
+              }`}
+            />
           </button>
         </div>
 
